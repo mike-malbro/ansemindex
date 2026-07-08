@@ -1,4 +1,4 @@
-import { ANSEM_MINT, PRIMARY_WALLET, TRACKED_WALLETS } from "./config";
+import { ANSEM_MINT, INDEX_TOKEN_SYMBOL, PRIMARY_WALLET, TRACKED_WALLETS } from "./config";
 import {
   ensureMigrated,
   getPrimaryProject,
@@ -134,8 +134,8 @@ export async function ingestControllerWallet(
     // Ensure controller wallet row
     await query(
       `INSERT INTO controller_wallets (project_id, address, label, sort_order)
-       VALUES ($1, $2, 'wallet(0)', 0)
-       ON CONFLICT (project_id, address) DO UPDATE SET active = true`,
+       VALUES ($1, $2, 'creator(0)', 0)
+       ON CONFLICT (project_id, address) DO UPDATE SET active = true, label = COALESCE(controller_wallets.label, 'creator(0)')`,
       [project.id, wallet],
     );
 
@@ -250,17 +250,83 @@ export async function readIndexFromDb(): Promise<IndexPayload | null> {
     0,
   );
 
+  const walletList =
+    wallets.length > 0
+      ? wallets
+      : TRACKED_WALLETS.map((address, i) => ({
+          address,
+          label: `creator(${i})`,
+          sort_order: i,
+        }));
+
+  const creators = walletList.map((w) => {
+    const mine = pools.filter(
+      (p) =>
+        (p.controller_wallet || wallet0).toLowerCase() ===
+        w.address.toLowerCase(),
+    );
+    const position_usd = mine.reduce(
+      (s, p) => s + Number(p.position_value_usd || 0),
+      0,
+    );
+    const unclaimed_fees_usd = mine.reduce(
+      (s, p) => s + Number(p.unclaimed_fees_usd || 0),
+      0,
+    );
+    const claimed_fees_usd = mine.reduce(
+      (s, p) => s + Number(p.claimed_fees_usd || 0),
+      0,
+    );
+    return {
+      address: w.address,
+      label: w.label?.startsWith("wallet")
+        ? w.label.replace("wallet", "creator")
+        : w.label || `creator(${w.sort_order})`,
+      sort_order: w.sort_order,
+      pools: mine.length,
+      position_usd,
+      unclaimed_fees_usd,
+      claimed_fees_usd,
+      fees_earned_usd: unclaimed_fees_usd + claimed_fees_usd,
+    };
+  });
+
+  // Single creator book: if attribution missed, give all open pools to creator(0)
+  if (
+    creators.length === 1 &&
+    creators[0]!.pools === 0 &&
+    pools.length > 0
+  ) {
+    creators[0] = {
+      ...creators[0]!,
+      pools: pools.length,
+      position_usd: total_position_usd,
+      unclaimed_fees_usd: total_fees_usd,
+      claimed_fees_usd: total_claimed_fees_usd,
+      fees_earned_usd: total_fees_usd + total_claimed_fees_usd,
+    };
+  }
+
+  // If pools exist but no wallet match (legacy), attribute all to wallet0
+  if (creators.length === 0 && pools.length > 0) {
+    creators.push({
+      address: wallet0,
+      label: "creator(0)",
+      sort_order: 0,
+      pools: pools.length,
+      position_usd: total_position_usd,
+      unclaimed_fees_usd: total_fees_usd,
+      claimed_fees_usd: total_claimed_fees_usd,
+      fees_earned_usd: total_fees_usd + total_claimed_fees_usd,
+    });
+  }
+
   return {
     source: "db",
+    index_token: INDEX_TOKEN_SYMBOL,
     wallet0,
-    wallets:
-      wallets.length > 0
-        ? wallets
-        : TRACKED_WALLETS.map((address, i) => ({
-            address,
-            label: `wallet(${i})`,
-            sort_order: i,
-          })),
+    wallets: walletList,
+    creators,
     ansem_mint: project.mint,
     treasury_usd: 0,
     ingested_at: lastIngest?.finished_at ?? null,

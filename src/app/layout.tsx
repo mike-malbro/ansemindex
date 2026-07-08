@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ANSEM INDEX · How-to guide",
+  title: "$ANSEMINDEX · Creator wallets",
   description:
-    "Creator fees buy tokens/ANSEM until 70% ANSEM, then all buybacks. DAMM v2 · run your own node. Public hub — no keys.",
+    "Creator wallets seeding TOKEN–ANSEM pools. Click a creator to drill down. Public hub — no keys.",
 };
 
 export default function RootLayout({

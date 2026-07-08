@@ -117,7 +117,7 @@ export default function WhitepaperPage() {
           <p className="mt-4 text-xs text-zinc-500">
             Open it:{" "}
             <Link href="/book" className="text-sky-400 hover:underline">
-              /book · Index
+              /book · Creators
             </Link>
             .
           </p>

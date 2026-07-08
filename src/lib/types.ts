@@ -198,16 +198,32 @@ export type IndexPoolRow = {
   snapshot_at: string | null;
 };
 
+/** One creator wallet in the $ANSEMINDEX book */
+export type CreatorWalletRow = {
+  address: string;
+  label: string;
+  sort_order: number;
+  pools: number;
+  position_usd: number;
+  unclaimed_fees_usd: number;
+  claimed_fees_usd: number;
+  fees_earned_usd: number;
+};
+
 export type IndexPayload = {
   source: "db" | "live";
+  /** Brand */
+  index_token: string;
   wallet0: string;
   wallets: { address: string; label: string; sort_order: number }[];
+  /** Creator wallets — primary UI list */
+  creators: CreatorWalletRow[];
   ansem_mint: string;
   treasury_usd: number;
   ingested_at: string | null;
   total_pools: number;
   total_position_usd: number;
-  /** Unclaimed LP fees on wallet(0) positions */
+  /** Unclaimed LP fees on creator positions */
   total_fees_usd: number;
   /** Already-claimed LP fees (lifetime on open positions) */
   total_claimed_fees_usd: number;

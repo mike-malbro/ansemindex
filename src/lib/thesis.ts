@@ -12,12 +12,12 @@ export const BASE_FEE_PCT = 1;
 export const NODE_MIN_USD = 1;
 
 export const MISSION =
-  "ANSEM Index maps TOKEN–ANSEM markets on Meteora. Creator fees buy tokens and ANSEM until ANSEM is 70% of the program — then all buybacks. You run your own node. This public hub never holds keys.";
+  "$ANSEMINDEX is about creator wallets. Each creator seeds TOKEN–ANSEM pools on Meteora. Creator fees buy tokens and ANSEM until ANSEM is 70% of the program — then all buybacks. You run your own node. This public hub never holds keys.";
 
 export const PRINCIPLES = [
   "Public hub never holds private keys.",
-  "Controller wallets are the map — not our fee treasury.",
-  "Our creator-fee treasury starts at $0 until fees exist.",
+  "Creator wallets are the index — click one to drill down.",
+  "$ANSEMINDEX treasury starts at $0 until creator fees exist.",
   "Copy the method, not the wallet — run your own ANSEM node.",
   "Observable or it didn’t happen.",
   "Rules can shift as data arrives — this paper will update.",
@@ -55,12 +55,12 @@ export const EXPLAIN_FEE_1PCT = {
 } as const;
 
 export const EXPLAIN_INDEX = {
-  title: "The index = wallet(0)",
-  body: "wallet(0) is the controller pubkey. Its open TOKEN–ANSEM Meteora positions are the index. We read them from Meteora, store them in Postgres, and show pool amounts on the Index page. This is a map — not our fee treasury (that stays $0 until creator fees exist). Click a pool to see ranked top holders of that token.",
+  title: "The index = creator wallets",
+  body: "$ANSEMINDEX is the token. The index behind it is creator wallets — pubkeys that seed TOKEN–ANSEM pools. creator(0) is the first. Click a creator to open a drill-down: that wallet’s pools, fee pies, and top holders. This hub stores the book in Postgres. It never holds keys. $ANSEMINDEX treasury stays $0 until creator fees exist.",
   bullets: [
-    "Source: controller wallet open positions",
-    "Stored continuously in the database",
-    "Dashboard shows wallet(0) + pool amounts + holder ranks",
+    "Primary list: creator wallets (not a flat pool dump)",
+    "Click creator → bottom drill-down for that wallet",
+    "Pools + fees + holders live under each creator",
   ],
 } as const;
 
@@ -172,10 +172,10 @@ export const HOW_TO_GUIDE = [
   {
     id: "controller-book",
     n: 3,
-    title: "Open the index",
-    body: "wallet(0) pools + amounts + holder ranks — the map, not our treasury.",
+    title: "Open creator wallets",
+    body: "Click a creator → drill down into pools, fees, holders for that wallet.",
     href: "/book",
-    cta: "Open index",
+    cta: "Creators",
   },
   {
     id: "wallets",

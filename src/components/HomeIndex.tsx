@@ -3,16 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import type { IndexPayload } from "@/lib/types";
-import {
-  fmtMoney,
-  fmtPct,
-  pnlClass,
-  shortCa,
-  solscanAccount,
-} from "@/lib/format";
-import { REFRESH_INTERVAL_MS } from "@/lib/config";
-import { IndexCharts } from "./IndexCharts";
+import { fmtMoney, shortCa, solscanAccount } from "@/lib/format";
+import { INDEX_TOKEN_SYMBOL, REFRESH_INTERVAL_MS } from "@/lib/config";
 
+/** Homepage: $ANSEMINDEX creator wallets — click opens drill-down on /book */
 export function HomeIndex() {
   const [data, setData] = useState<IndexPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +22,7 @@ export function HomeIndex() {
       setData((await res.json()) as IndexPayload);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load index");
+      setError(e instanceof Error ? e.message : "Failed to load");
     }
   }, []);
 
@@ -42,139 +36,101 @@ export function HomeIndex() {
     return () => clearInterval(id);
   }, [load]);
 
+  const token = data?.index_token || INDEX_TOKEN_SYMBOL;
+
   return (
-    <section id="index" className="mt-10">
+    <section id="creators" className="mt-10">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-lg font-semibold">The index</h2>
-        <Link
-          href="/book"
-          className="text-[11px] text-sky-400 hover:underline"
-        >
-          Full index →
+        <div>
+          <p className="text-[10px] uppercase tracking-widest text-amber-200/80">
+            ${token}
+          </p>
+          <h2 className="mt-1 text-lg font-semibold">Creator wallets</h2>
+        </div>
+        <Link href="/book" className="text-[11px] text-sky-400 hover:underline">
+          Open book →
         </Link>
       </div>
       <p className="mt-1 text-xs text-zinc-500">
-        wallet(0) open TOKEN–ANSEM pools. Fees below are real LP fees from
-        Meteora — our creator-fee treasury is still $0.
+        The index is creator wallets. Click one to drill down into that wallet’s
+        pools, fees, and holders.
       </p>
 
-      {error && (
-        <p className="mt-3 text-xs text-rose-400">{error}</p>
-      )}
-
+      {error && <p className="mt-3 text-xs text-rose-400">{error}</p>}
       {!data && !error && (
-        <p className="mt-6 text-xs text-zinc-500">Loading index…</p>
+        <p className="mt-6 text-xs text-zinc-500">Loading creators…</p>
       )}
 
       {data && (
         <>
-          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-            <div className="rounded border border-amber-900/40 bg-amber-950/15 px-3 py-3 col-span-2 sm:col-span-1">
-              <div className="text-[10px] uppercase tracking-wider text-amber-200/70">
-                wallet(0)
-              </div>
-              <a
-                href={solscanAccount(data.wallet0)}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-1 block text-sm text-zinc-100 hover:text-sky-400"
-                title={data.wallet0}
-              >
-                {shortCa(data.wallet0, 6, 6)}
-              </a>
-            </div>
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <Stat label="Creators" value={String(data.creators.length)} />
             <Stat label="Pools" value={String(data.total_pools)} />
-            <Stat
-              label="Pool amount"
-              value={fmtMoney(data.total_position_usd)}
-            />
             <Stat
               label="Fees earned"
               value={fmtMoney(data.total_fees_earned_usd)}
-              sub={`${fmtMoney(data.total_claimed_fees_usd)} claimed · ${fmtMoney(data.total_fees_usd)} open`}
               valueClass="text-amber-300"
             />
             <Stat
-              label="Unclaimed"
-              value={fmtMoney(data.total_fees_usd)}
-              valueClass="text-amber-200/90"
-            />
-            <Stat
-              label="Our treasury"
+              label={`$${token} treasury`}
               value={fmtMoney(data.treasury_usd)}
-              sub="creator fees — still $0"
+              sub="still $0"
             />
           </div>
-
-          <div className="mt-4">
-            <IndexCharts
-              data={data}
-              compact
-              onPoolSelect={(addr) => {
-                if (addr) {
-                  window.location.href = `/book?pool=${encodeURIComponent(addr)}`;
-                }
-              }}
-            />
-          </div>
-          <p className="mt-2 text-[10px] text-zinc-600">
-            Click a slice → open that pool on Index for top 10 holders + their
-            pie.
-          </p>
 
           <div className="mt-4 overflow-x-auto rounded border border-zinc-800">
-            <table className="w-full min-w-[640px] border-collapse text-left">
+            <table className="w-full min-w-[560px] border-collapse text-left">
               <thead className="bg-zinc-900/80">
                 <tr className="border-b border-zinc-800">
                   <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-zinc-500">
-                    #
+                    Creator
                   </th>
                   <th className="px-3 py-2 text-[10px] uppercase tracking-wider text-zinc-500">
-                    Pool
+                    Address
+                  </th>
+                  <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wider text-zinc-500">
+                    Pools
                   </th>
                   <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wider text-zinc-500">
                     Amount
                   </th>
                   <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wider text-zinc-500">
-                    Unclaimed
-                  </th>
-                  <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wider text-zinc-500">
-                    Claimed
-                  </th>
-                  <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wider text-zinc-500">
-                    24h
+                    Fees
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {data.pools.map((p, i) => (
+                {data.creators.map((c) => (
                   <tr
-                    key={p.pool_address}
-                    className="border-b border-zinc-800/80"
+                    key={c.address}
+                    className="border-b border-zinc-800/80 transition hover:bg-zinc-900/70"
                   >
-                    <td className="px-3 py-2 text-xs text-zinc-600">{i + 1}</td>
-                    <td className="px-3 py-2">
-                      <div className="text-sm text-zinc-100">
-                        {p.token_symbol}
-                        <span className="text-zinc-500">–ANSEM</span>
-                      </div>
-                      <div className="text-[10px] text-zinc-600">
-                        {shortCa(p.pool_address)}
-                      </div>
+                    <td className="px-3 py-3">
+                      <Link
+                        href={`/book?creator=${encodeURIComponent(c.address)}`}
+                        className="text-sm text-amber-100/90 hover:underline"
+                      >
+                        {c.label}
+                      </Link>
                     </td>
-                    <td className="px-3 py-2 text-right text-sm tabular-nums text-zinc-100">
-                      {fmtMoney(p.position_value_usd)}
+                    <td className="px-3 py-3 text-xs text-zinc-400">
+                      <a
+                        href={solscanAccount(c.address)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="hover:text-sky-400"
+                      >
+                        {shortCa(c.address, 6, 6)}
+                      </a>
                     </td>
-                    <td className="px-3 py-2 text-right text-sm tabular-nums text-amber-300/90">
-                      {fmtMoney(p.unclaimed_fees_usd)}
+                    <td className="px-3 py-3 text-right text-sm tabular-nums text-zinc-200">
+                      {c.pools}
                     </td>
-                    <td className="px-3 py-2 text-right text-sm tabular-nums text-zinc-300">
-                      {fmtMoney(p.claimed_fees_usd)}
+                    <td className="px-3 py-3 text-right text-sm tabular-nums text-zinc-100">
+                      {fmtMoney(c.position_usd)}
                     </td>
-                    <td
-                      className={`px-3 py-2 text-right text-sm tabular-nums ${pnlClass(p.price_change_24h)}`}
-                    >
-                      {fmtPct(p.price_change_24h)}
+                    <td className="px-3 py-3 text-right text-sm tabular-nums text-amber-300/90">
+                      {fmtMoney(c.fees_earned_usd)}
                     </td>
                   </tr>
                 ))}
@@ -187,9 +143,9 @@ export function HomeIndex() {
             {data.ingested_at
               ? new Date(data.ingested_at).toLocaleString()
               : "—"}{" "}
-            ·{" "}
+            · click a creator → bottom drill-down on{" "}
             <Link href="/book" className="text-sky-400 hover:underline">
-              holders + detail
+              /book
             </Link>
           </p>
         </>

@@ -1,8 +1,8 @@
 import Link from "next/link";
 
 const LINKS = [
-  { href: "/", label: "Guide" },
-  { href: "/book", label: "Index" },
+  { href: "/", label: "Home" },
+  { href: "/book", label: "Creators" },
   { href: "/whitepaper", label: "Whitepaper" },
   { href: "/roadmap", label: "Roadmap" },
   { href: "/manage", label: "Manage" },
@@ -13,9 +13,9 @@ export function SiteNav({ current }: { current?: string }) {
     <header className="border-b border-zinc-800 bg-zinc-950/90 px-4 py-3 backdrop-blur sm:px-6">
       <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3">
         <Link href="/" className="font-mono text-sm font-semibold tracking-tight text-zinc-100">
-          ANSEM INDEX
+          $ANSEMINDEX
           <span className="ml-2 text-[10px] font-normal uppercase tracking-widest text-zinc-500">
-            how-to
+            creators
           </span>
         </Link>
         <nav className="flex flex-wrap gap-1">

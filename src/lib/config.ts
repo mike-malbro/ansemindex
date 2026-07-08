@@ -29,3 +29,11 @@ export const DEXSCREENER_BASE =
   process.env.DEXSCREENER_BASE ?? "https://api.dexscreener.com";
 
 export const INDEX_NAME = "ANSEM INDEX";
+/** Ticker for the index token this hub is about */
+export const INDEX_TOKEN_SYMBOL =
+  process.env.NEXT_PUBLIC_INDEX_TOKEN_SYMBOL ?? "ANSEMINDEX";
+/** Optional mint once launched — empty until live */
+export const INDEX_TOKEN_MINT =
+  process.env.NEXT_PUBLIC_INDEX_TOKEN_MINT ??
+  process.env.INDEX_TOKEN_MINT ??
+  "";

@@ -1,10 +1,11 @@
-import { IndexDashboard } from "@/components/IndexDashboard";
+import { CreatorBook } from "@/components/CreatorBook";
 import { SiteNav } from "@/components/SiteNav";
+import { INDEX_TOKEN_SYMBOL } from "@/lib/config";
 
 export const metadata = {
-  title: "Index · ANSEM INDEX",
+  title: `$${INDEX_TOKEN_SYMBOL} · Creator wallets`,
   description:
-    "Controller wallet(0) TOKEN–ANSEM pools — the live index map, not our treasury.",
+    "Creator wallets seeding TOKEN–ANSEM pools — the $ANSEMINDEX book. Click a creator to drill down.",
 };
 
 export default function BookPage() {
@@ -13,14 +14,11 @@ export default function BookPage() {
       <SiteNav current="/book" />
       <div className="border-b border-zinc-800 bg-zinc-900/40 px-4 py-2 sm:px-6">
         <p className="mx-auto max-w-[1400px] font-mono text-[11px] text-zinc-500">
-          Live index from wallet(0). Stored in Postgres. Public read only — no
-          keys.{" "}
-          <a href="/whitepaper#index" className="text-sky-400 hover:underline">
-            How the index works
-          </a>
+          ${INDEX_TOKEN_SYMBOL} — creator wallets are the index. Click one →
+          drill down at the bottom. Public read only — no keys.
         </p>
       </div>
-      <IndexDashboard />
+      <CreatorBook embedded />
     </div>
   );
 }
