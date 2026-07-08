@@ -1,83 +1,91 @@
 import Link from "next/link";
 import { SiteNav } from "@/components/SiteNav";
+import { FeeCompoundChart } from "@/components/whitepaper/FeeCompoundChart";
+import { FeeFlywheelChart } from "@/components/whitepaper/FeeFlywheelChart";
+import { PoolDiagram } from "@/components/whitepaper/PoolDiagram";
 import {
   ANSEM_TARGET_PCT,
   BASE_FEE_PCT,
+  EXPLAIN_FEE_1PCT,
+  EXPLAIN_METEORA,
+  EXPLAIN_POOL,
   FEE_CHART,
+  HOW_TO_SHORT,
+  MISSION,
   PRINCIPLES,
-  THESIS,
-} from "@/lib/thesis";
-import {
-  NODE_MIN_USD,
-  PART1_FLOW,
-  PARTS,
-  START_LIST,
-  WHITEPAPER_TITLE,
+  ROADMAP_PHASES,
+  WHITEPAPER_NAV,
+  WHITEPAPER_UPDATED_NOTE,
   WHITEPAPER_VERSION,
-  startListFloorUsd,
-} from "@/lib/whitepaper";
+} from "@/lib/thesis";
+import { START_LIST, WHITEPAPER_TITLE } from "@/lib/whitepaper";
 
 export const metadata = {
-  title: `${WHITEPAPER_TITLE} · ANSEM INDEX`,
+  title: `${WHITEPAPER_TITLE} v${WHITEPAPER_VERSION} · ANSEM INDEX`,
   description:
-    "Thesis, fee chart (70% ANSEM then buybacks), and how-to for DAMM v2 TOKEN–ANSEM pools.",
+    "v1.0 how-to: Meteora, liquidity pools, 1% fees, 70% ANSEM fee chart, and roadmap.",
 };
 
+function Section({
+  id,
+  children,
+}: {
+  id: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section
+      id={id}
+      className="scroll-mt-24 border-b border-zinc-800/80 py-12 last:border-b-0"
+    >
+      {children}
+    </section>
+  );
+}
+
 export default function WhitepaperPage() {
-  const floor = startListFloorUsd();
+  const pct = Math.round(ANSEM_TARGET_PCT * 100);
 
   return (
     <div className="min-h-screen bg-zinc-950 font-mono text-zinc-100">
       <SiteNav current="/whitepaper" />
 
-      <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-        <p className="text-[10px] uppercase tracking-widest text-zinc-500">
-          {WHITEPAPER_VERSION} · public guide · no keys
-        </p>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">
-          {WHITEPAPER_TITLE}
-        </h1>
-        <p className="mt-2 max-w-xl text-sm text-zinc-400">
-          How-to paper. Creator fees buy tokens/ANSEM until{" "}
-          {(ANSEM_TARGET_PCT * 100).toFixed(0)}% ANSEM — then all buybacks.
-          DAMM v2 at {BASE_FEE_PCT}%.
-        </p>
-
-        <nav className="mt-8 space-y-2 border-b border-zinc-800 pb-6">
-          {PARTS.map((p) => (
+      <nav
+        className="sticky top-0 z-20 border-b border-zinc-800/80 bg-zinc-950/95 backdrop-blur"
+        aria-label="Whitepaper sections"
+      >
+        <div className="mx-auto flex max-w-3xl gap-1 overflow-x-auto px-4 py-2 sm:px-6">
+          {WHITEPAPER_NAV.map((item) => (
             <a
-              key={p.id}
-              href={`#${p.id}`}
-              className="block rounded border border-zinc-800/80 bg-zinc-900/30 px-3 py-2 transition hover:border-zinc-600"
+              key={item.id}
+              href={`#${item.id}`}
+              className="shrink-0 rounded px-2.5 py-1.5 text-[10px] uppercase tracking-wider text-zinc-500 transition hover:bg-zinc-900 hover:text-zinc-200"
             >
-              <div className="text-xs font-semibold text-zinc-200">
-                {p.label}
-                {"stub" in p && p.stub ? (
-                  <span className="ml-2 text-[10px] font-normal text-zinc-600">
-                    stub
-                  </span>
-                ) : null}
-              </div>
-              <div className="mt-0.5 text-[11px] text-zinc-500">{p.blurb}</div>
+              {item.label}
             </a>
           ))}
-        </nav>
+        </div>
+      </nav>
 
-        {/* PART 0 — Thesis */}
-        <section id="part-0" className="mt-10 scroll-mt-8 space-y-4">
-          <h2 className="text-lg font-semibold">Part 0 — Thesis</h2>
-          {[THESIS.why, THESIS.damm, THESIS.onePct, THESIS.adapt].map((t) => (
-            <div
-              key={t.title}
-              className="rounded border border-zinc-800 bg-zinc-900/40 px-4 py-4"
-            >
-              <h3 className="text-sm font-semibold text-zinc-100">{t.title}</h3>
-              <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-                {t.body}
-              </p>
-            </div>
-          ))}
-          <ul className="space-y-2 pt-2">
+      <main className="mx-auto max-w-3xl px-4 sm:px-6">
+        {/* 1 — Cover */}
+        <Section id="cover">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded border border-amber-800/60 bg-amber-950/30 px-2 py-0.5 text-[10px] uppercase tracking-widest text-amber-200/90">
+              v{WHITEPAPER_VERSION}
+            </span>
+            <span className="text-[10px] uppercase tracking-widest text-zinc-500">
+              living docs · no keys
+            </span>
+          </div>
+          <h1 className="mt-4 text-2xl font-semibold tracking-tight sm:text-3xl">
+            {WHITEPAPER_TITLE}
+          </h1>
+          <p className="mt-4 max-w-xl text-sm leading-relaxed text-zinc-300">
+            {MISSION}
+          </p>
+          <p className="mt-3 text-xs text-zinc-500">{WHITEPAPER_UPDATED_NOTE}</p>
+          <ul className="mt-8 space-y-2">
             {PRINCIPLES.map((p) => (
               <li
                 key={p}
@@ -87,33 +95,71 @@ export default function WhitepaperPage() {
               </li>
             ))}
           </ul>
-        </section>
+        </Section>
 
-        {/* FEE CHART */}
-        <section id="fee-chart" className="mt-14 scroll-mt-8 space-y-4">
-          <h2 className="text-lg font-semibold">{FEE_CHART.title}</h2>
-          <div className="overflow-x-auto rounded border border-amber-900/40 bg-amber-950/15 p-4">
-            <div className="flex min-w-[560px] items-stretch gap-2 text-center text-[10px]">
-              {[
-                "Creator fees",
-                "Buy tokens / ANSEM",
-                `Under ${(ANSEM_TARGET_PCT * 100).toFixed(0)}% → send`,
-                `≥ ${(ANSEM_TARGET_PCT * 100).toFixed(0)}% → buybacks`,
-              ].map((label, i) => (
-                <div key={label} className="flex flex-1 items-center gap-2">
-                  <div className="flex-1 rounded border border-zinc-700 bg-zinc-950/70 px-2 py-3 text-zinc-200">
-                    {label}
-                  </div>
-                  {i < 3 && (
-                    <span className="shrink-0 text-zinc-600" aria-hidden>
-                      →
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
+        {/* 2 — Meteora */}
+        <Section id="meteora">
+          <h2 className="text-lg font-semibold">{EXPLAIN_METEORA.title}</h2>
+          <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+            {EXPLAIN_METEORA.body}
+          </p>
+          <ul className="mt-4 space-y-2">
+            {EXPLAIN_METEORA.bullets.map((b) => (
+              <li key={b} className="text-xs text-zinc-500 before:mr-2 before:content-['·']">
+                {b}
+              </li>
+            ))}
+          </ul>
+        </Section>
+
+        {/* 3 — Pool */}
+        <Section id="pool">
+          <h2 className="text-lg font-semibold">{EXPLAIN_POOL.title}</h2>
+          <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+            {EXPLAIN_POOL.body}
+          </p>
+          <div className="mt-6">
+            <PoolDiagram />
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <ul className="mt-4 space-y-2">
+            {EXPLAIN_POOL.bullets.map((b) => (
+              <li key={b} className="text-xs text-zinc-500 before:mr-2 before:content-['·']">
+                {b}
+              </li>
+            ))}
+          </ul>
+        </Section>
+
+        {/* 4 — Fees */}
+        <Section id="fees">
+          <h2 className="text-lg font-semibold">{EXPLAIN_FEE_1PCT.title}</h2>
+          <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+            {EXPLAIN_FEE_1PCT.body}
+          </p>
+          <div className="mt-6">
+            <FeeCompoundChart />
+          </div>
+          <ul className="mt-4 space-y-2">
+            {EXPLAIN_FEE_1PCT.bullets.map((b) => (
+              <li key={b} className="text-xs text-zinc-500 before:mr-2 before:content-['·']">
+                {b}
+              </li>
+            ))}
+          </ul>
+        </Section>
+
+        {/* 5 — Flywheel */}
+        <Section id="flywheel">
+          <h2 className="text-lg font-semibold">{FEE_CHART.title}</h2>
+          <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+            Creator fees buy tokens and ANSEM. While ANSEM is under {pct}% of the
+            program, send and seed. At {pct}% or more, the same fees go to all
+            buybacks. Base fee on pools: {BASE_FEE_PCT}%.
+          </p>
+          <div className="mt-6">
+            <FeeFlywheelChart />
+          </div>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
             {FEE_CHART.phases.map((p) => (
               <div
                 key={p.id}
@@ -128,15 +174,35 @@ export default function WhitepaperPage() {
               </div>
             ))}
           </div>
-        </section>
+          <ol className="mt-6 space-y-3">
+            {FEE_CHART.steps.map((s) => (
+              <li key={s.n} className="flex gap-3 text-xs">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded border border-zinc-700 text-[10px] text-zinc-400">
+                  {s.n}
+                </span>
+                <div>
+                  <div className="font-semibold text-zinc-200">{s.title}</div>
+                  <p className="mt-0.5 text-zinc-500">{s.body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </Section>
 
-        {/* PART 1 — steps */}
-        <section id="part-1" className="mt-14 scroll-mt-8 space-y-4">
-          <h2 className="text-lg font-semibold">Part 1 — How-to flow</h2>
-          <ol className="space-y-3">
-            {PART1_FLOW.map((step) => (
+        {/* 6 — How-to */}
+        <Section id="howto">
+          <h2 className="text-lg font-semibold">How-to</h2>
+          <p className="mt-2 text-xs text-zinc-500">
+            Short path. Start list lives in Manage / Book —{" "}
+            <Link href="/book" className="text-sky-400 hover:underline">
+              open the book
+            </Link>{" "}
+            ({START_LIST.length} nodes).
+          </p>
+          <ol className="mt-6 space-y-3">
+            {HOW_TO_SHORT.map((step) => (
               <li
-                key={step.id}
+                key={step.n}
                 className="flex gap-3 rounded border border-zinc-800 bg-zinc-900/40 px-4 py-4"
               >
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-zinc-700 text-xs text-zinc-300">
@@ -153,86 +219,45 @@ export default function WhitepaperPage() {
               </li>
             ))}
           </ol>
-        </section>
+        </Section>
 
-        {/* START LIST */}
-        <section id="start-list" className="mt-14 scroll-mt-8 space-y-3">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="text-lg font-semibold">Start list — nodes to seed</h2>
-            <p className="text-[11px] text-zinc-500">
-              Floor ≈ ${floor.toFixed(0)} · ${NODE_MIN_USD} min ·{" "}
-              {START_LIST.length} nodes
-            </p>
-          </div>
-          <p className="text-[11px] text-zinc-500">
-            Dual-sided TOKEN–ANSEM on{" "}
-            <a
-              href="https://app.meteora.ag"
-              className="text-sky-400 hover:underline"
-              target="_blank"
-              rel="noreferrer"
-            >
-              app.meteora.ag
-            </a>{" "}
-            with your LP wallet. Edit list in{" "}
-            <code className="text-zinc-400">src/lib/whitepaper.ts</code>.
+        {/* 7 — Roadmap */}
+        <Section id="roadmap">
+          <h2 className="text-lg font-semibold">Roadmap</h2>
+          <p className="mt-2 text-sm text-zinc-400">
+            Pools → nodes → flywheel → long SOL / long ANSEM → brain → index
+            token. Rules can shift as data arrives.
           </p>
-          <div className="overflow-x-auto rounded border border-zinc-800">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-zinc-900/80 text-[10px] uppercase tracking-wider text-zinc-500">
-                <tr>
-                  <th className="px-3 py-2">#</th>
-                  <th className="px-3 py-2">Ticker</th>
-                  <th className="px-3 py-2 text-right">Min USD</th>
-                  <th className="px-3 py-2">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {START_LIST.map((n, i) => (
-                  <tr
-                    key={`${n.ticker}-${i}`}
-                    className="border-t border-zinc-800/80"
-                  >
-                    <td className="px-3 py-2 text-zinc-600">{i + 1}</td>
-                    <td className="px-3 py-2 font-medium text-zinc-100">
-                      {n.ticker}
-                      <span className="text-zinc-600">–ANSEM</span>
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-zinc-300">
-                      ${n.minUsd}
-                    </td>
-                    <td className="px-3 py-2 text-zinc-500">
-                      {n.status ?? "queued"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <section id="part-2" className="mt-14 scroll-mt-8 border-t border-zinc-800 pt-8">
-          <h2 className="text-lg font-semibold">Part 2 — Wallets</h2>
-          <p className="mt-2 text-xs text-zinc-500">
-            W1 LP claims · W2 operator buys/sends · ANSEM dest receives. Pubkeys
-            only on this hub — see{" "}
-            <Link href="/manage" className="text-sky-400 hover:underline">
-              Manage
-            </Link>
-            .
-          </p>
-        </section>
-
-        <section id="part-3" className="mt-10 scroll-mt-8 border-t border-zinc-800 pt-8 pb-16">
-          <h2 className="text-lg font-semibold">Part 3 — Index token</h2>
-          <p className="mt-2 text-xs text-zinc-500">
-            Stub. Memecoin that buys the index — after pools + nodes. See{" "}
+          <ol className="mt-6 space-y-3">
+            {ROADMAP_PHASES.map((p) => (
+              <li
+                key={p.id}
+                className={`rounded border px-4 py-3 ${
+                  p.status === "now"
+                    ? "border-amber-800/50 bg-amber-950/15"
+                    : "border-zinc-800 bg-zinc-900/30"
+                }`}
+              >
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <span className="text-sm font-semibold text-zinc-100">
+                    {p.phase}. {p.title}
+                  </span>
+                  <span className="text-[10px] uppercase tracking-wider text-zinc-500">
+                    {p.status}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-zinc-500">{p.detail}</p>
+              </li>
+            ))}
+          </ol>
+          <p className="mt-6 text-[11px] text-zinc-600">
+            Full page:{" "}
             <Link href="/roadmap" className="text-sky-400 hover:underline">
-              Roadmap
+              /roadmap
             </Link>
             .
           </p>
-        </section>
+        </Section>
       </main>
     </div>
   );

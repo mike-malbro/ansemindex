@@ -3,10 +3,14 @@
  * Thesis / fee chart live in thesis.ts (single source of truth).
  */
 
-import { FEE_CHART, NODE_MIN_USD as THESIS_NODE_MIN } from "./thesis";
+import {
+  FEE_CHART,
+  NODE_MIN_USD as THESIS_NODE_MIN,
+  WHITEPAPER_VERSION as THESIS_WP_VERSION,
+} from "./thesis";
 
 export const NODE_MIN_USD = THESIS_NODE_MIN;
-export const WHITEPAPER_VERSION = "v0.2-guide";
+export const WHITEPAPER_VERSION = THESIS_WP_VERSION;
 export const WHITEPAPER_TITLE = "ANSEM Index Whitepaper";
 
 export type FlowStep = {

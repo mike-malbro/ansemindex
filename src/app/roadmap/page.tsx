@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { SiteNav } from "@/components/SiteNav";
-import { ROADMAP_PHASES } from "@/lib/thesis";
+import { ROADMAP_PHASES, WHITEPAPER_VERSION } from "@/lib/thesis";
 
 export const metadata = {
   title: "Roadmap · ANSEM INDEX",
-  description: "Pools → nodes → flywheel → brain → index token.",
+  description:
+    "Pools → nodes → flywheel → long SOL → long ANSEM → brain → index token.",
 };
 
 export default function RoadmapPage() {
@@ -15,11 +16,13 @@ export default function RoadmapPage() {
         <p className="text-[10px] uppercase tracking-widest text-zinc-500">
           Strategic roadmap
         </p>
-        <h1 className="mt-2 text-2xl font-semibold">Pools first, then brain</h1>
+        <h1 className="mt-2 text-2xl font-semibold">
+          Pools → flywheel → long SOL / ANSEM
+        </h1>
         <p className="mt-2 max-w-xl text-sm text-zinc-400">
-          Start with the nervous system (pools + fee chart). Nodes and flywheel
-          next. Adaptive “brain” only after we have a dataset — and never with
-          keys on the public hub.
+          Start with pools and the fee chart. Nodes and flywheel next. Optional
+          longs after the core loop is stable. Adaptive “brain” only with a
+          dataset — and never with keys on the public hub.
         </p>
 
         <ol className="mt-10 space-y-4">
@@ -48,16 +51,16 @@ export default function RoadmapPage() {
         </ol>
 
         <p className="mt-10 text-xs text-zinc-500">
-          How-to steps:{" "}
+          How-to:{" "}
           <Link href="/" className="text-sky-400 hover:underline">
             Guide home
           </Link>
-          . Fee chart:{" "}
+          . Paper:{" "}
           <Link
-            href="/whitepaper#fee-chart"
+            href="/whitepaper#roadmap"
             className="text-sky-400 hover:underline"
           >
-            Whitepaper
+            Whitepaper v{WHITEPAPER_VERSION}
           </Link>
           .
         </p>
