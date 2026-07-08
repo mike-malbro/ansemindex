@@ -1,13 +1,13 @@
 /**
- * ANSEM Index whitepaper — Part 1 is the fee → pool flywheel.
- * Later parts (token, keeper ops, roadmap) can extend this file.
+ * ANSEM Index whitepaper — start list + parts nav.
+ * Thesis / fee chart live in thesis.ts (single source of truth).
  */
 
-export const WHITEPAPER_VERSION = "v0.1-launch";
-export const WHITEPAPER_TITLE = "ANSEM Index Whitepaper";
+import { FEE_CHART, NODE_MIN_USD as THESIS_NODE_MIN } from "./thesis";
 
-/** Minimum USD seeded into each start-list node (dual-sided). */
-export const NODE_MIN_USD = 1;
+export const NODE_MIN_USD = THESIS_NODE_MIN;
+export const WHITEPAPER_VERSION = "v0.2-guide";
+export const WHITEPAPER_TITLE = "ANSEM Index Whitepaper";
 
 export type FlowStep = {
   id: string;
@@ -16,56 +16,23 @@ export type FlowStep = {
   body: string;
 };
 
-/** Part 1 — the flow (lead the whitepaper with this). */
-export const PART1_FLOW: FlowStep[] = [
-  {
-    id: "creator-fees",
-    n: 1,
-    title: "Collect creator / LP fees",
-    body: "Fees accrue on Meteora DAMM v2 TOKEN–ANSEM positions owned by the LP wallet (W1). The keeper claims them on a schedule — no platform cut.",
-  },
-  {
-    id: "buy-ansem",
-    n: 2,
-    title: "Buy ANSEM",
-    body: "Claimed fees are swept to the operator (W2). A configured share is swapped via Jupiter into $ANSEM. Bought ANSEM is sent to the creator fee destination wallet — not burned.",
-  },
-  {
-    id: "dual-sided",
-    n: 3,
-    title: "Fund dual-sided pools",
-    body: "ANSEM (and paired tokens) seed dual-sided liquidity on Meteora: each start-list node gets both sides of the TOKEN–ANSEM pair so the book stays balanced and tradeable.",
-  },
-  {
-    id: "min-nodes",
-    n: 4,
-    title: "Minimum in every node",
-    body: `Launch seeds the start list evenly — about $${NODE_MIN_USD} here, $${NODE_MIN_USD} there — until every listed node has at least the minimum. Coverage first, size later.`,
-  },
-  {
-    id: "winners",
-    n: 5,
-    title: "Add more to winners",
-    body: "After the floor is in, new fee flow concentrates into nodes that are winning (volume, fees, retention). Losers stay at the minimum; winners get topped up.",
-  },
-];
+/** Part 1 — fee chart steps (from thesis). */
+export const PART1_FLOW: FlowStep[] = FEE_CHART.steps.map((s) => ({
+  id: `step-${s.n}`,
+  n: s.n,
+  title: s.title,
+  body: s.body,
+}));
 
 export type StartNode = {
   ticker: string;
   mint?: string;
   pool?: string;
-  /** Target floor USD for this node at launch */
   minUsd: number;
-  /** Optional note / status */
   status?: "queued" | "seeded" | "winner" | "paused";
   note?: string;
 };
 
-/**
- * Start list — edit freely.
- * Seeded from the live tracked book; replace/reorder as you lock the launch set.
- * Keeper / manage UI reads this for “nodes to seed” display.
- */
 export const START_LIST: StartNode[] = [
   { ticker: "BIF", mint: "62YE1d4sRArBQzR5bdbxsx2k9LV3MdPV4xMC4Di2pump", pool: "74bgudzA62dkB4oGfhR8TUmd9dphVsrqJdFoW4xnWRX2", minUsd: NODE_MIN_USD, status: "queued" },
   { ticker: "LIFE", mint: "J8cXU1EFi1SCTJ9XYpBnjqQ7nVLETNLFaRaHCP3RLiFE", pool: "B86oFNeAXyt1TKVM9S2qe6JPE9rV7EVD9rqbvMPnZx7Y", minUsd: NODE_MIN_USD, status: "queued" },
@@ -96,20 +63,35 @@ export const START_LIST: StartNode[] = [
 
 export const PARTS = [
   {
+    id: "part-0",
+    label: "Part 0 — Thesis",
+    blurb: "Why DAMM v2, why 1%, how we stay adaptable.",
+  },
+  {
+    id: "fee-chart",
+    label: "Fee chart",
+    blurb: "Build to 70% ANSEM → then all buybacks.",
+  },
+  {
     id: "part-1",
-    label: "Part 1 — The flow",
-    blurb: "Creator fees → buy ANSEM → dual-sided pools → $1 floor per node → scale winners.",
+    label: "Part 1 — How-to flow",
+    blurb: "Step-by-step: fees → buy → send → buybacks → floor → winners.",
+  },
+  {
+    id: "start-list",
+    label: "Start list",
+    blurb: "$1 dual-sided floor per node.",
   },
   {
     id: "part-2",
-    label: "Part 2 — Wallets & custody",
-    blurb: "W1 LP claims · W2 operator buys/sends · ANSEM dest receives. Coming next.",
+    label: "Part 2 — Wallets",
+    blurb: "W1 / W2 / ANSEM dest — pubkeys only on this hub.",
     stub: true,
   },
   {
     id: "part-3",
     label: "Part 3 — Index token",
-    blurb: "Memecoin that buys the index. Outline only until pools + fee loop are live.",
+    blurb: "After pools + nodes work.",
     stub: true,
   },
 ] as const;

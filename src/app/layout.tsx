@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ANSEM INDEX",
+  title: "ANSEM INDEX · How-to guide",
   description:
-    "Independent Meteora DAMM v2 LP terminal for the ANSEM index — read-only portfolio viewer.",
+    "Creator fees buy tokens/ANSEM until 70% ANSEM, then all buybacks. DAMM v2 · run your own node. Public hub — no keys.",
 };
 
 export default function RootLayout({

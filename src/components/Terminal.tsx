@@ -16,7 +16,7 @@ type SortKey =
   | "ticker"
   | "change24h";
 
-export function Terminal() {
+export function Terminal({ embedded = false }: { embedded?: boolean }) {
   const [data, setData] = useState<PortfolioPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -95,49 +95,69 @@ export function Terminal() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b border-zinc-800 bg-zinc-950/80 px-4 py-3 backdrop-blur sm:px-6">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4">
-          <div>
-            <h1 className="font-mono text-lg font-semibold tracking-tight text-zinc-100 sm:text-xl">
-              ANSEM INDEX
-            </h1>
-            <p className="font-mono text-[11px] text-zinc-500">
-              Meteora DAMM v2 · read-only terminal
-            </p>
+      {!embedded && (
+        <header className="border-b border-zinc-800 bg-zinc-950/80 px-4 py-3 backdrop-blur sm:px-6">
+          <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4">
+            <div>
+              <h1 className="font-mono text-lg font-semibold tracking-tight text-zinc-100 sm:text-xl">
+                Controller book
+              </h1>
+              <p className="font-mono text-[11px] text-zinc-500">
+                Meteora DAMM v2 · read-only · not our treasury
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              {lastFetch && (
+                <span className="hidden font-mono text-[10px] text-zinc-500 sm:inline">
+                  synced {new Date(lastFetch).toLocaleTimeString()}
+                </span>
+              )}
+              <a
+                href="/"
+                className="rounded border border-zinc-700 bg-zinc-900 px-3 py-1.5 font-mono text-xs text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-800"
+              >
+                Guide
+              </a>
+              <button
+                type="button"
+                onClick={() => {
+                  setLoading(true);
+                  load();
+                }}
+                className="rounded border border-zinc-700 bg-zinc-900 px-3 py-1.5 font-mono text-xs text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-800"
+              >
+                Refresh
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            {lastFetch && (
-              <span className="hidden font-mono text-[10px] text-zinc-500 sm:inline">
-                synced {new Date(lastFetch).toLocaleTimeString()}
-              </span>
-            )}
-            <a
-              href="/whitepaper"
-              className="rounded border border-zinc-700 bg-zinc-900 px-3 py-1.5 font-mono text-xs text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-800"
-            >
-              Whitepaper
-            </a>
-            <a
-              href="/manage"
-              className="rounded border border-zinc-700 bg-zinc-900 px-3 py-1.5 font-mono text-xs text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-800"
-            >
-              Manage
-            </a>
-            <button
-              type="button"
-              onClick={() => {
-                setLoading(true);
-                load();
-              }}
-              className="rounded border border-zinc-700 bg-zinc-900 px-3 py-1.5 font-mono text-xs text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-800"
-            >
-              Refresh
-            </button>
-          </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 px-4 py-4 sm:px-6">
+        {embedded && (
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="font-mono text-sm font-semibold text-zinc-200">
+              Controller book
+            </h1>
+            <div className="flex items-center gap-3">
+              {lastFetch && (
+                <span className="font-mono text-[10px] text-zinc-500">
+                  synced {new Date(lastFetch).toLocaleTimeString()}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setLoading(true);
+                  load();
+                }}
+                className="rounded border border-zinc-700 bg-zinc-900 px-3 py-1.5 font-mono text-xs text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-800"
+              >
+                Refresh
+              </button>
+            </div>
+          </div>
+        )}
         {error && (
           <div className="rounded border border-rose-900/60 bg-rose-950/40 px-4 py-3 font-mono text-sm text-rose-300">
             {error}

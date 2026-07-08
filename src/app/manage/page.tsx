@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { SiteNav } from "@/components/SiteNav";
+import { ANSEM_TARGET_PCT } from "@/lib/thesis";
 import { NODE_MIN_USD, START_LIST, startListFloorUsd } from "@/lib/whitepaper";
 
 type KeeperState = {
@@ -64,29 +66,16 @@ export default function ManagePage() {
   const c = state?.config;
 
   return (
-    <div className="mx-auto min-h-screen max-w-3xl px-4 py-8 font-mono text-zinc-100">
-      <div className="mb-6 flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold">Management</h1>
-          <p className="text-[11px] text-zinc-500">
-            Creator fees → buy ANSEM → dual-sided pools · ${NODE_MIN_USD} min /
-            node → scale winners
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Link
-            href="/whitepaper"
-            className="rounded border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-900"
-          >
-            Whitepaper
-          </Link>
-          <Link
-            href="/"
-            className="rounded border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-900"
-          >
-            ← Terminal
-          </Link>
-        </div>
+    <div className="min-h-screen bg-zinc-950 font-mono text-zinc-100">
+      <SiteNav current="/manage" />
+      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
+      <div className="mb-6">
+        <h1 className="text-xl font-semibold">Management</h1>
+        <p className="mt-1 text-[11px] text-zinc-500">
+          Pubkeys only on this hub. Fees → buy tokens/ANSEM → send until{" "}
+          {(ANSEM_TARGET_PCT * 100).toFixed(0)}% ANSEM → then all buybacks · $
+          {NODE_MIN_USD}/node floor.
+        </p>
       </div>
 
       {err && (
@@ -208,6 +197,7 @@ export default function ManagePage() {
           </pre>
         </div>
       )}
+      </div>
     </div>
   );
 }
