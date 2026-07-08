@@ -1,7 +1,11 @@
 import { cacheGet, cacheSet } from "./cache";
 
-const RPC =
-  process.env.SOLANA_RPC_URL ?? "https://api.mainnet-beta.solana.com";
+const RPC_CANDIDATES = [
+  process.env.SOLANA_RPC_URL,
+  "https://solana-rpc.publicnode.com",
+  "https://rpc.ankr.com/solana",
+  "https://api.mainnet-beta.solana.com",
+].filter(Boolean) as string[];
 
 export type RankedHolder = {
   rank: number;
@@ -33,8 +37,12 @@ type ParsedAccount = {
   };
 } | null;
 
-async function rpc<T>(method: string, params: unknown[]): Promise<T> {
-  const res = await fetch(RPC, {
+async function rpcOnce<T>(
+  endpoint: string,
+  method: string,
+  params: unknown[],
+): Promise<T> {
+  const res = await fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
@@ -44,6 +52,18 @@ async function rpc<T>(method: string, params: unknown[]): Promise<T> {
   if (json.error) throw new Error(json.error.message || "RPC error");
   if (json.result === undefined) throw new Error("RPC empty result");
   return json.result;
+}
+
+async function rpc<T>(method: string, params: unknown[]): Promise<T> {
+  let lastErr: Error | null = null;
+  for (const endpoint of RPC_CANDIDATES) {
+    try {
+      return await rpcOnce<T>(endpoint, method, params);
+    } catch (e) {
+      lastErr = e instanceof Error ? e : new Error(String(e));
+    }
+  }
+  throw lastErr ?? new Error("All Solana RPCs failed");
 }
 
 /**
