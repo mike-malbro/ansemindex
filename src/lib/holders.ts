@@ -123,3 +123,95 @@ export async function rankTokenHolders(
   cacheSet(cacheKey, rows, 5 * 60_000);
   return rows;
 }
+
+export type WalletTokenBalance = {
+  mint: string;
+  amountUi: number;
+  amount: number;
+  decimals: number;
+};
+
+const TOKEN_PROGRAM = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
+const TOKEN_2022_PROGRAM = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb";
+
+/**
+ * Token balances for a wallet, filtered to an optional mint set (index tokens).
+ */
+export async function getWalletTokenBalances(
+  owner: string,
+  opts?: { mints?: string[] },
+): Promise<WalletTokenBalance[]> {
+  const mintSet = opts?.mints?.length
+    ? new Set(opts.mints.map((m) => m.toLowerCase()))
+    : null;
+  const cacheKey = `wallet-bal:${owner}:${mintSet ? [...mintSet].sort().join(",").slice(0, 80) : "all"}`;
+  const cached = cacheGet<WalletTokenBalance[]>(cacheKey);
+  if (cached) return cached;
+
+  type TokenAcc = {
+    pubkey: string;
+    account: {
+      data: {
+        parsed?: {
+          info?: {
+            mint?: string;
+            tokenAmount?: {
+              uiAmount?: number | null;
+              amount?: string;
+              decimals?: number;
+            };
+          };
+        };
+      };
+    };
+  };
+
+  async function fetchProgram(programId: string): Promise<TokenAcc[]> {
+    const res = await rpc<{ value: TokenAcc[] }>("getTokenAccountsByOwner", [
+      owner,
+      { programId },
+      { encoding: "jsonParsed" },
+    ]);
+    return res.value ?? [];
+  }
+
+  let accounts: TokenAcc[] = [];
+  try {
+    accounts = await fetchProgram(TOKEN_PROGRAM);
+  } catch {
+    accounts = [];
+  }
+  try {
+    const t22 = await fetchProgram(TOKEN_2022_PROGRAM);
+    accounts = accounts.concat(t22);
+  } catch {
+    /* optional */
+  }
+
+  const byMint = new Map<string, WalletTokenBalance>();
+  for (const acc of accounts) {
+    const info = acc.account?.data?.parsed?.info;
+    const mint = info?.mint;
+    if (!mint) continue;
+    if (mintSet && !mintSet.has(mint.toLowerCase())) continue;
+    const ta = info.tokenAmount;
+    const amountUi = ta?.uiAmount ?? 0;
+    if (!amountUi || amountUi <= 0) continue;
+    const prev = byMint.get(mint);
+    if (prev) {
+      prev.amountUi += amountUi;
+      prev.amount += Number(ta?.amount ?? 0);
+    } else {
+      byMint.set(mint, {
+        mint,
+        amountUi,
+        amount: Number(ta?.amount ?? 0),
+        decimals: ta?.decimals ?? 0,
+      });
+    }
+  }
+
+  const rows = [...byMint.values()].sort((a, b) => b.amountUi - a.amountUi);
+  cacheSet(cacheKey, rows, 2 * 60_000);
+  return rows;
+}

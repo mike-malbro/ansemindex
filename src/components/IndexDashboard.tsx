@@ -12,19 +12,8 @@ import {
   solscanToken,
 } from "@/lib/format";
 import { REFRESH_INTERVAL_MS } from "@/lib/config";
-
-type HoldersPayload = {
-  mint: string;
-  token_symbol: string | null;
-  note: string;
-  holders: {
-    rank: number;
-    owner: string;
-    amountUi: number;
-    pctOfTop: number;
-    isController: boolean;
-  }[];
-};
+import { IndexCharts } from "./IndexCharts";
+import { HolderPanel } from "./HolderPanel";
 
 export function IndexDashboard() {
   const [data, setData] = useState<IndexPayload | null>(null);
@@ -32,9 +21,6 @@ export function IndexDashboard() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<IndexPoolRow | null>(null);
-  const [holders, setHolders] = useState<HoldersPayload | null>(null);
-  const [holdersErr, setHoldersErr] = useState<string | null>(null);
-  const [holdersLoading, setHoldersLoading] = useState(false);
 
   const load = useCallback(async (refresh = false) => {
     try {
@@ -59,45 +45,19 @@ export function IndexDashboard() {
     let ticks = 0;
     const id = setInterval(() => {
       ticks += 1;
-      // Re-ingest from wallet every ~2 min; otherwise read DB
-      const refresh = ticks % 4 === 0;
-      load(refresh);
+      load(ticks % 4 === 0);
     }, REFRESH_INTERVAL_MS);
     return () => clearInterval(id);
   }, [load]);
 
+  // Deep-link: /book?pool=<address>
   useEffect(() => {
-    if (!selected) {
-      setHolders(null);
-      return;
-    }
-    let cancelled = false;
-    setHoldersLoading(true);
-    setHoldersErr(null);
-    fetch(
-      `/api/pool/${selected.pool_address}/holders?mint=${encodeURIComponent(selected.token_mint)}`,
-    )
-      .then(async (r) => {
-        if (!r.ok) {
-          const b = await r.json().catch(() => ({}));
-          throw new Error(b.error || `HTTP ${r.status}`);
-        }
-        return r.json();
-      })
-      .then((j) => {
-        if (!cancelled) setHolders(j as HoldersPayload);
-      })
-      .catch((e) => {
-        if (!cancelled)
-          setHoldersErr(e instanceof Error ? e.message : "Failed");
-      })
-      .finally(() => {
-        if (!cancelled) setHoldersLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [selected]);
+    if (!data) return;
+    const pool = new URLSearchParams(window.location.search).get("pool");
+    if (!pool) return;
+    const row = data.pools.find((p) => p.pool_address === pool);
+    if (row) setSelected(row);
+  }, [data]);
 
   const pools = useMemo(() => {
     if (!data) return [];
@@ -112,6 +72,15 @@ export function IndexDashboard() {
     );
   }, [data, query]);
 
+  function selectPool(address: string | null) {
+    if (!data || !address) {
+      setSelected(null);
+      return;
+    }
+    const row = data.pools.find((p) => p.pool_address === address) ?? null;
+    setSelected(row);
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 px-4 py-4 sm:px-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -120,8 +89,7 @@ export function IndexDashboard() {
             Index
           </h1>
           <p className="mt-1 font-mono text-[11px] text-zinc-500">
-            Controller wallet(0) open TOKEN–ANSEM pools — the map, not our
-            treasury.
+            wallet(0) pools · interactive pies · top 10 holders
           </p>
         </div>
         <button
@@ -150,8 +118,7 @@ export function IndexDashboard() {
 
       {data && (
         <>
-          {/* Wallet(0) + totals */}
-          <section className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+          <section className="grid gap-2 sm:grid-cols-2 lg:grid-cols-6">
             <div className="rounded border border-amber-900/40 bg-amber-950/15 px-3 py-3 sm:col-span-2 lg:col-span-1">
               <div className="font-mono text-[10px] uppercase tracking-wider text-amber-200/70">
                 wallet(0)
@@ -165,15 +132,11 @@ export function IndexDashboard() {
               >
                 {shortCa(data.wallet0, 6, 6)}
               </a>
-              <div className="mt-1 font-mono text-[10px] text-zinc-500">
-                source · {data.source}
-              </div>
             </div>
             <Stat label="Pools" value={String(data.total_pools)} />
             <Stat
               label="Pool amount"
               value={fmtMoney(data.total_position_usd)}
-              sub="controller LP value"
             />
             <Stat
               label="Fees earned"
@@ -193,12 +156,11 @@ export function IndexDashboard() {
             />
           </section>
 
-          <p className="font-mono text-[10px] text-zinc-600">
-            Last ingest{" "}
-            {data.ingested_at
-              ? new Date(data.ingested_at).toLocaleString()
-              : "—"}
-          </p>
+          <IndexCharts
+            data={data}
+            selectedPoolId={selected?.pool_address ?? null}
+            onPoolSelect={selectPool}
+          />
 
           <div className="flex flex-wrap items-center gap-3">
             <input
@@ -248,7 +210,9 @@ export function IndexDashboard() {
                   return (
                     <tr
                       key={p.pool_address}
-                      onClick={() => setSelected(p)}
+                      onClick={() =>
+                        setSelected(sel ? null : p)
+                      }
                       className={`cursor-pointer border-b border-zinc-800/80 hover:bg-zinc-900/70 ${
                         sel ? "bg-zinc-900" : ""
                       }`}
@@ -308,107 +272,12 @@ export function IndexDashboard() {
                     </tr>
                   );
                 })}
-                {pools.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={7}
-                      className="px-3 py-10 text-center font-mono text-sm text-zinc-500"
-                    >
-                      No pools in index yet.
-                    </td>
-                  </tr>
-                )}
               </tbody>
             </table>
           </div>
 
-          {/* Holder ranks panel */}
           {selected && (
-            <section className="rounded border border-zinc-800 bg-zinc-900/40 px-4 py-4">
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <h2 className="font-mono text-sm font-semibold text-zinc-100">
-                  Holders · {selected.token_symbol}
-                </h2>
-                <button
-                  type="button"
-                  onClick={() => setSelected(null)}
-                  className="font-mono text-[11px] text-zinc-500 hover:text-zinc-300"
-                >
-                  Close
-                </button>
-              </div>
-              <p className="mt-1 font-mono text-[10px] text-zinc-500">
-                Top SPL holders of the pool token. Not LP NFT owners (Meteora
-                does not publish that list).
-              </p>
-              {holdersLoading && (
-                <p className="mt-4 font-mono text-xs text-zinc-500">
-                  Loading holders…
-                </p>
-              )}
-              {holdersErr && (
-                <p className="mt-4 font-mono text-xs text-rose-400">
-                  {holdersErr}
-                </p>
-              )}
-              {holders && (
-                <div className="mt-4 overflow-x-auto">
-                  <table className="w-full min-w-[480px] text-left">
-                    <thead>
-                      <tr className="border-b border-zinc-800">
-                        <th className="py-2 font-mono text-[10px] uppercase text-zinc-500">
-                          Rank
-                        </th>
-                        <th className="py-2 font-mono text-[10px] uppercase text-zinc-500">
-                          Owner
-                        </th>
-                        <th className="py-2 text-right font-mono text-[10px] uppercase text-zinc-500">
-                          Amount
-                        </th>
-                        <th className="py-2 text-right font-mono text-[10px] uppercase text-zinc-500">
-                          % of top
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {holders.holders.map((h) => (
-                        <tr
-                          key={`${h.rank}-${h.owner}`}
-                          className="border-b border-zinc-800/60"
-                        >
-                          <td className="py-2 font-mono text-xs text-zinc-500">
-                            {h.rank}
-                          </td>
-                          <td className="py-2 font-mono text-xs">
-                            <a
-                              href={solscanAccount(h.owner)}
-                              target="_blank"
-                              rel="noreferrer"
-                              className={
-                                h.isController
-                                  ? "text-amber-300 hover:underline"
-                                  : "text-zinc-300 hover:text-sky-400"
-                              }
-                            >
-                              {shortCa(h.owner, 4, 4)}
-                              {h.isController ? " · wallet(0)" : ""}
-                            </a>
-                          </td>
-                          <td className="py-2 text-right font-mono text-xs tabular-nums text-zinc-300">
-                            {h.amountUi.toLocaleString(undefined, {
-                              maximumFractionDigits: 2,
-                            })}
-                          </td>
-                          <td className="py-2 text-right font-mono text-xs tabular-nums text-zinc-500">
-                            {h.pctOfTop.toFixed(1)}%
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </section>
+            <HolderPanel pool={selected} onClose={() => setSelected(null)} />
           )}
         </>
       )}

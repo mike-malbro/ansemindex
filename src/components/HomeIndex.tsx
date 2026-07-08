@@ -11,6 +11,7 @@ import {
   solscanAccount,
 } from "@/lib/format";
 import { REFRESH_INTERVAL_MS } from "@/lib/config";
+import { IndexCharts } from "./IndexCharts";
 
 export function HomeIndex() {
   const [data, setData] = useState<IndexPayload | null>(null);
@@ -104,6 +105,22 @@ export function HomeIndex() {
               sub="creator fees — still $0"
             />
           </div>
+
+          <div className="mt-4">
+            <IndexCharts
+              data={data}
+              compact
+              onPoolSelect={(addr) => {
+                if (addr) {
+                  window.location.href = `/book?pool=${encodeURIComponent(addr)}`;
+                }
+              }}
+            />
+          </div>
+          <p className="mt-2 text-[10px] text-zinc-600">
+            Click a slice → open that pool on Index for top 10 holders + their
+            pie.
+          </p>
 
           <div className="mt-4 overflow-x-auto rounded border border-zinc-800">
             <table className="w-full min-w-[640px] border-collapse text-left">

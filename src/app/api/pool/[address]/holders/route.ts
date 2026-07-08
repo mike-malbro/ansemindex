@@ -40,18 +40,23 @@ export async function GET(
       );
     }
 
+    const limitRaw = Number(req.nextUrl.searchParams.get("limit") ?? 10);
+    const limit = Number.isFinite(limitRaw)
+      ? Math.min(Math.max(Math.floor(limitRaw), 1), 25)
+      : 10;
+
     const holders = await rankTokenHolders(mint, {
       controllerWallets: TRACKED_WALLETS.length
         ? TRACKED_WALLETS
         : [PRIMARY_WALLET],
-      limit: 20,
+      limit,
     });
 
     return NextResponse.json({
       pool_address: address,
       mint,
       token_symbol: tokenSymbol,
-      note: "Top token holders (SPL largest accounts). Not LP position owners.",
+      note: "Top 10 token holders (SPL largest accounts). Click a row for their index pie.",
       holders,
       fetched_at: new Date().toISOString(),
     });
