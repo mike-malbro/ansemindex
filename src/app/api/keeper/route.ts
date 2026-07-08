@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { PRIMARY_WALLET, ANSEM_MINT } from "@/lib/config";
+import { hasDatabase } from "@/lib/db";
+import { persistKeeperTick } from "@/lib/fee-ledger";
 import { buildPortfolio } from "@/lib/portfolio";
 import { planFeeClaims } from "@/lib/keeper";
+import { assertNoSecrets } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -16,6 +19,16 @@ async function tryKeeperHttp(pathname: string, init?: RequestInit) {
   });
   const json = await res.json().catch(() => ({}));
   return { status: res.status, json };
+}
+
+async function maybePersist(tick: Record<string, unknown>) {
+  if (!hasDatabase()) return null;
+  try {
+    return await persistKeeperTick(tick);
+  } catch (e) {
+    console.error("[api/keeper] persist failed", e);
+    return null;
+  }
 }
 
 export async function GET() {
@@ -53,7 +66,8 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
-    const action = body.action || "tick";
+    assertNoSecrets(body);
+    const action = (body as { action?: string }).action || "tick";
 
     if (action === "doctor" || action === "state") {
       const remote = await tryKeeperHttp("/api/state");
@@ -61,13 +75,22 @@ export async function POST(req: Request) {
       return GET();
     }
 
+    // Persist a tick payload from the keeper service (or manual)
+    if (action === "persist") {
+      const tick =
+        (body as { tick?: Record<string, unknown> }).tick ||
+        (body as Record<string, unknown>);
+      const result = await maybePersist(tick);
+      return NextResponse.json({ ok: true, ...result });
+    }
+
     if (action === "tick") {
       const remote = await tryKeeperHttp("/api/tick", { method: "POST" });
       if (remote) {
+        await maybePersist(remote.json as Record<string, unknown>);
         return NextResponse.json({ source: "keeper", ...remote.json });
       }
 
-      // In-process dry plan (no child_process, no keys)
       const portfolio = await buildPortfolio(
         process.env.LP_WALLET || PRIMARY_WALLET,
       );
@@ -82,9 +105,12 @@ export async function POST(req: Request) {
       const ansemPct = Number(process.env.FEE_SPLIT_ANSEM_SEND ?? 0.7);
       const reservePct = Number(process.env.FEE_SPLIT_RESERVE ?? 0.3);
 
-      return NextResponse.json({
+      const tick = {
         source: "hub_dry_plan",
         dry_run: true,
+        live: false,
+        started: new Date().toISOString(),
+        finished: new Date().toISOString(),
         note: "Hub simulated tick. Deploy keeper/ + set KEEPER_URL for real claim/buy/send.",
         wallets: {
           lp: process.env.LP_WALLET || PRIMARY_WALLET,
@@ -117,14 +143,16 @@ export async function POST(req: Request) {
         },
         totals: portfolio.totals,
         positions: portfolio.total_positions,
-      });
+      };
+
+      const persisted = await maybePersist(tick);
+      return NextResponse.json({ ...tick, persisted });
     }
 
     return NextResponse.json({ error: "unknown action" }, { status: 400 });
   } catch (e) {
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : "action failed" },
-      { status: 502 },
-    );
+    const message = e instanceof Error ? e.message : "action failed";
+    const status = message.startsWith("Rejected secret") ? 400 : 502;
+    return NextResponse.json({ error: message }, { status });
   }
 }

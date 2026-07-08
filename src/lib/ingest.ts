@@ -14,6 +14,10 @@ import {
 } from "./db";
 import { enrichPositions } from "./dexscreener";
 import {
+  readTreasuryUsd,
+  writeIndexSnapshotFromDb,
+} from "./fee-ledger";
+import {
   claimedFeesUsd,
   getOpenPositions,
   positionValueUsd,
@@ -225,6 +229,9 @@ export async function ingestAllMapWallets(): Promise<{
     );
   }
 
+  // Index-level ANSEM 0–70% snapshot for fee dashboards
+  await writeIndexSnapshotFromDb("ingest");
+
   return {
     wallets: [...TRACKED_WALLETS],
     poolsUpserted,
@@ -429,6 +436,8 @@ export async function readIndexFromDb(): Promise<IndexPayload | null> {
     [project.id],
   );
 
+  const treasury_usd = await readTreasuryUsd();
+
   return {
     source: "db",
     index_token: INDEX_TOKEN_SYMBOL,
@@ -438,7 +447,7 @@ export async function readIndexFromDb(): Promise<IndexPayload | null> {
     /** @deprecated use map_wallets — kept for older clients */
     creators: map_wallets,
     ansem_mint: project.mint,
-    treasury_usd: 0,
+    treasury_usd,
     ingested_at: lastIngest?.finished_at ?? null,
     total_pools: pools.length,
     total_position_usd,

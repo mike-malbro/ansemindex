@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import type { EnrichedPosition, PortfolioPayload } from "@/lib/types";
 import {
   fmtMoney,
@@ -8,6 +9,7 @@ import {
   shortCa,
   solscanAccount,
 } from "@/lib/format";
+import { ANSEM_TARGET_PCT } from "@/lib/thesis";
 import { PieChart, consolidateSlices } from "./PieChart";
 
 type HolderPayload = {
@@ -31,15 +33,46 @@ type KeeperState = {
   };
 };
 
+type FeeDash = {
+  target_pct: number;
+  latest: {
+    ansem_pct: number;
+    total_ansem_usd: number;
+    total_position_usd: number;
+    gate_phase: string;
+    pool_count: number;
+    snapshot_at: string;
+  } | null;
+  cumulative_creator_sends_usd: number;
+  recent_sends: {
+    id: string;
+    recipient: string;
+    usd: number;
+    dry_run: boolean;
+    status: string;
+    sent_at: string;
+    transfer_tx: string | null;
+  }[];
+  recent_events: {
+    id: string;
+    event_type: string;
+    status: string;
+    usd: number | null;
+    tx_signature: string | null;
+    occurred_at: string;
+  }[];
+  recent_ticks: number;
+};
+
 /**
- * Creator tab — the ANSEM creator-fee destination wallet.
- * Shows that pubkey’s index holdings + open LPs (pubkeys only).
+ * Creator tab — fee wallet + ANSEM 0→70% goal + fee ledger.
  */
 export function CreatorFeePanel() {
   const [feeWallet, setFeeWallet] = useState<string | null>(null);
   const [sourceNote, setSourceNote] = useState<string>("");
   const [holder, setHolder] = useState<HolderPayload | null>(null);
   const [portfolio, setPortfolio] = useState<PortfolioPayload | null>(null);
+  const [fees, setFees] = useState<FeeDash | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -47,8 +80,15 @@ export function CreatorFeePanel() {
     setLoading(true);
     setError(null);
     try {
-      const kRes = await fetch("/api/keeper", { cache: "no-store" });
+      const [kRes, fRes] = await Promise.all([
+        fetch("/api/keeper", { cache: "no-store" }),
+        fetch("/api/fees", { cache: "no-store" }),
+      ]);
       const k = (await kRes.json()) as KeeperState;
+      const fBody = await fRes.json().catch(() => null);
+      if (fRes.ok) setFees(fBody as FeeDash);
+      else setFees(null);
+
       const dest = k.config?.ansemDestWallet?.trim() || null;
       const lp = k.config?.lpWallet?.trim() || null;
       const wallet = dest || lp;
@@ -62,7 +102,7 @@ export function CreatorFeePanel() {
       setFeeWallet(wallet);
       setSourceNote(
         dest
-          ? "ANSEM creator fee destination — receives bought ANSEM from the fee flywheel."
+          ? "ANSEM creator fee destination — fee buys land here toward the 70% gate."
           : "ANSEM_DEST_WALLET unset — showing LP wallet until the creator fee dest is configured.",
       );
 
@@ -92,6 +132,13 @@ export function CreatorFeePanel() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const targetPct = Math.round((fees?.target_pct ?? ANSEM_TARGET_PCT) * 100);
+  const ansemPct = fees?.latest?.ansem_pct ?? 0;
+  const ansemPctDisplay = Math.min(100, Math.max(0, ansemPct * 100));
+  const progressToGate = Math.min(100, (ansemPct / ANSEM_TARGET_PCT) * 100);
+  const phase = fees?.latest?.gate_phase ?? "build";
+  const atGate = phase === "buybacks" || ansemPct >= ANSEM_TARGET_PCT;
 
   const pie = useMemo(() => {
     if (!holder?.pie?.length) return [];
@@ -125,8 +172,9 @@ export function CreatorFeePanel() {
             Creator
           </h1>
           <p className="mt-1 max-w-xl font-mono text-[11px] text-zinc-500">
-            The ANSEM creator fee wallet — where fee buys land. Pubkey only; this
-            hub never holds keys.
+            Creator fees buy ANSEM toward the {targetPct}% goal. Under{" "}
+            {targetPct}%: send / seed. At {targetPct}%+: all buybacks. Pubkeys
+            only.
           </p>
         </div>
         <button
@@ -137,6 +185,63 @@ export function CreatorFeePanel() {
           Refresh
         </button>
       </div>
+
+      {/* 0 → 70% ANSEM goal — primary creator-fee story */}
+      <section className="rounded border border-amber-900/40 bg-amber-950/15 px-4 py-5 sm:px-6">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="font-mono text-sm font-semibold text-amber-100/90">
+            ANSEM goal · 0 → {targetPct}%
+          </h2>
+          <span
+            className={`font-mono text-[10px] uppercase tracking-wider ${
+              atGate ? "text-emerald-400" : "text-amber-200/80"
+            }`}
+          >
+            {atGate ? "Buybacks" : "Build"}
+          </span>
+        </div>
+        <p className="mt-2 max-w-2xl font-mono text-[11px] leading-relaxed text-zinc-400">
+          A big slice of creator fees is sent into ANSEM until the index stack
+          hits {targetPct}% ANSEM. Then the same fee flow flips to 100%
+          buybacks.{" "}
+          <Link
+            href="/whitepaper#flywheel"
+            className="text-sky-400 hover:underline"
+          >
+            Fee chart →
+          </Link>
+        </p>
+
+        <div className="mt-5">
+          <div className="mb-1.5 flex justify-between font-mono text-[10px] text-zinc-500">
+            <span>0%</span>
+            <span className="text-zinc-300">
+              {ansemPctDisplay.toFixed(1)}% ANSEM
+              {fees?.latest
+                ? ` · ${fmtMoney(fees.latest.total_ansem_usd)} / ${fmtMoney(fees.latest.total_position_usd)}`
+                : " · awaiting snapshot"}
+            </span>
+            <span>{targetPct}%</span>
+          </div>
+          <div className="relative h-3 overflow-hidden rounded-full bg-zinc-900">
+            <div
+              className="absolute inset-y-0 left-0 rounded-full bg-amber-500/80 transition-all"
+              style={{ width: `${progressToGate}%` }}
+            />
+            <div
+              className="absolute inset-y-0 w-px bg-zinc-100/40"
+              style={{ left: "100%" }}
+              aria-hidden
+            />
+          </div>
+          <p className="mt-2 font-mono text-[10px] text-zinc-600">
+            Progress bar = share of the way to the {targetPct}% gate (not raw
+            ANSEM %). Ledger: {fees?.recent_ticks ?? 0} ticks ·{" "}
+            {fmtMoney(fees?.cumulative_creator_sends_usd ?? 0)} creator sends
+            (incl. dry).
+          </p>
+        </div>
+      </section>
 
       {error && (
         <div className="rounded border border-rose-900/60 bg-rose-950/40 px-4 py-3 font-mono text-sm text-rose-300">
@@ -166,7 +271,7 @@ export function CreatorFeePanel() {
               href={solscanAccount(feeWallet)}
               target="_blank"
               rel="noreferrer"
-              className="mt-1 inline-block font-mono text-sm text-sky-400 hover:underline"
+              className="mt-1 inline-block break-all font-mono text-sm text-sky-400 hover:underline"
             >
               {feeWallet}
             </a>
@@ -312,6 +417,75 @@ export function CreatorFeePanel() {
           )}
         </>
       )}
+
+      {/* Fee ledger from Postgres */}
+      <section className="space-y-3 border-t border-zinc-800 pt-6">
+        <h2 className="font-mono text-sm font-semibold text-zinc-200">
+          Fee ledger
+        </h2>
+        <p className="font-mono text-[11px] text-zinc-500">
+          Every keeper tick and creator-fee send is stored in Postgres (pubkeys
+          + amounts + sigs — never keys).
+        </p>
+
+        {(fees?.recent_sends?.length ?? 0) === 0 &&
+        (fees?.recent_events?.length ?? 0) === 0 ? (
+          <p className="font-mono text-xs text-zinc-600">
+            No fee events yet. Run a dry tick from{" "}
+            <Link href="/manage" className="text-sky-400 hover:underline">
+              Manage
+            </Link>{" "}
+            or wait for the next index refresh to write an ANSEM % snapshot.
+          </p>
+        ) : (
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="overflow-x-auto rounded border border-zinc-800">
+              <h3 className="border-b border-zinc-800 bg-zinc-900/80 px-3 py-2 font-mono text-[10px] uppercase text-zinc-500">
+                Creator sends
+              </h3>
+              <table className="w-full border-collapse text-left">
+                <tbody>
+                  {(fees?.recent_sends ?? []).slice(0, 12).map((s) => (
+                    <tr key={s.id} className="border-b border-zinc-800/60">
+                      <td className="px-3 py-2 font-mono text-[11px] text-zinc-400">
+                        {new Date(s.sent_at).toLocaleString()}
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono text-xs text-amber-200/90">
+                        {fmtMoney(s.usd)}
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono text-[10px] text-zinc-500">
+                        {s.dry_run ? "dry" : s.status}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="overflow-x-auto rounded border border-zinc-800">
+              <h3 className="border-b border-zinc-800 bg-zinc-900/80 px-3 py-2 font-mono text-[10px] uppercase text-zinc-500">
+                Recent events
+              </h3>
+              <table className="w-full border-collapse text-left">
+                <tbody>
+                  {(fees?.recent_events ?? []).slice(0, 12).map((e) => (
+                    <tr key={e.id} className="border-b border-zinc-800/60">
+                      <td className="px-3 py-2 font-mono text-[11px] text-zinc-300">
+                        {e.event_type}
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono text-xs text-zinc-400">
+                        {e.usd != null ? fmtMoney(e.usd) : "—"}
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono text-[10px] text-zinc-500">
+                        {e.status}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </section>
     </div>
   );
 }
