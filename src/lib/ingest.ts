@@ -1,4 +1,10 @@
-import { ANSEM_MINT, INDEX_TOKEN_SYMBOL, PRIMARY_WALLET, TRACKED_WALLETS } from "./config";
+import {
+  ANSEM_MINT,
+  INDEX_TOKEN_SYMBOL,
+  PRIMARY_WALLET,
+  TRACKED_WALLETS,
+  mapWalletLabel,
+} from "./config";
 import {
   ensureMigrated,
   getPrimaryProject,
@@ -17,6 +23,7 @@ import type {
   EnrichedPosition,
   IndexPayload,
   IndexPoolRow,
+  MapWalletRow,
   PortfolioPayload,
 } from "./types";
 
@@ -33,13 +40,15 @@ function splitAmounts(p: EnrichedPosition) {
   };
 }
 
-/** Pull controller wallet open positions → upsert pools + snapshots. */
+/** Ingest one map wallet’s open positions (pubkey only). */
 export async function ingestControllerWallet(
-  wallet = PRIMARY_WALLET,
+  wallet: string,
+  opts?: { sortOrder?: number; closeMissing?: boolean; seenUnion?: Set<string> },
 ): Promise<{
   poolsUpserted: number;
   positionsSeen: number;
   portfolio: PortfolioPayload;
+  seenPools: string[];
 }> {
   await ensureMigrated();
   if (!hasDatabase()) {
@@ -48,6 +57,9 @@ export async function ingestControllerWallet(
 
   const project = await getPrimaryProject();
   if (!project) throw new Error("No project row — run migrations");
+
+  const sortOrder = opts?.sortOrder ?? TRACKED_WALLETS.indexOf(wallet);
+  const label = mapWalletLabel(sortOrder < 0 ? 0 : sortOrder, wallet);
 
   const run = await queryOne<{ id: string }>(
     `INSERT INTO ingest_runs (project_id, wallet, status)
@@ -88,6 +100,7 @@ export async function ingestControllerWallet(
       );
       if (!poolRow) continue;
       seenPools.add(p.pool_address);
+      opts?.seenUnion?.add(p.pool_address);
       upserted += 1;
 
       await query(
@@ -121,8 +134,7 @@ export async function ingestControllerWallet(
       );
     }
 
-    // Mark pools not seen this run as closed (still in history)
-    if (seenPools.size > 0) {
+    if (opts?.closeMissing && seenPools.size > 0) {
       await query(
         `UPDATE pools SET status = 'closed'
          WHERE project_id = $1 AND source = 'controller' AND status = 'open'
@@ -131,12 +143,14 @@ export async function ingestControllerWallet(
       );
     }
 
-    // Ensure controller wallet row
     await query(
       `INSERT INTO controller_wallets (project_id, address, label, sort_order)
-       VALUES ($1, $2, 'creator(0)', 0)
-       ON CONFLICT (project_id, address) DO UPDATE SET active = true, label = COALESCE(controller_wallets.label, 'creator(0)')`,
-      [project.id, wallet],
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (project_id, address) DO UPDATE SET
+         active = true,
+         label = EXCLUDED.label,
+         sort_order = EXCLUDED.sort_order`,
+      [project.id, wallet, label, sortOrder < 0 ? 0 : sortOrder],
     );
 
     await query(
@@ -145,21 +159,20 @@ export async function ingestControllerWallet(
       [run!.id, upserted, enriched.length],
     );
 
-    const portfolio: PortfolioPayload = {
-      wallet,
-      ansem_mint: ANSEM_MINT,
-      fetched_at: new Date().toISOString(),
-      total_positions: open.total_positions ?? enriched.length,
-      total_pools: open.total_pools ?? seenPools.size,
-      sol_price: open.sol_price,
-      totals: open.total,
-      positions: enriched,
-    };
-
     return {
       poolsUpserted: upserted,
       positionsSeen: enriched.length,
-      portfolio,
+      seenPools: [...seenPools],
+      portfolio: {
+        wallet,
+        ansem_mint: ANSEM_MINT,
+        fetched_at: new Date().toISOString(),
+        total_positions: open.total_positions ?? enriched.length,
+        total_pools: open.total_pools ?? seenPools.size,
+        sol_price: open.sol_price,
+        totals: open.total,
+        positions: enriched,
+      },
     };
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
@@ -172,7 +185,54 @@ export async function ingestControllerWallet(
   }
 }
 
-/** Read latest index snapshot from DB (falls back to empty). */
+/**
+ * Auto-ingest every map wallet in TRACKED_WALLETS and merge into one pool index.
+ * Call on refresh — no manual wallet pick needed.
+ */
+export async function ingestAllMapWallets(): Promise<{
+  wallets: string[];
+  poolsUpserted: number;
+  positionsSeen: number;
+}> {
+  await ensureMigrated();
+  if (!hasDatabase()) throw new Error("DATABASE_URL not configured");
+
+  const project = await getPrimaryProject();
+  if (!project) throw new Error("No project row — run migrations");
+
+  const seenUnion = new Set<string>();
+  let poolsUpserted = 0;
+  let positionsSeen = 0;
+
+  for (let i = 0; i < TRACKED_WALLETS.length; i++) {
+    const wallet = TRACKED_WALLETS[i]!;
+    const result = await ingestControllerWallet(wallet, {
+      sortOrder: i,
+      closeMissing: false,
+      seenUnion,
+    });
+    poolsUpserted += result.poolsUpserted;
+    positionsSeen += result.positionsSeen;
+  }
+
+  // Close pools not seen by any map wallet this pass
+  if (seenUnion.size > 0) {
+    await query(
+      `UPDATE pools SET status = 'closed'
+       WHERE project_id = $1 AND source = 'controller' AND status = 'open'
+         AND pool_address <> ALL($2::text[])`,
+      [project.id, [...seenUnion]],
+    );
+  }
+
+  return {
+    wallets: [...TRACKED_WALLETS],
+    poolsUpserted,
+    positionsSeen,
+  };
+}
+
+/** Read merged index: one row per pool, values summed across map wallets. */
 export async function readIndexFromDb(): Promise<IndexPayload | null> {
   if (!hasDatabase()) return null;
   await ensureMigrated();
@@ -191,10 +251,66 @@ export async function readIndexFromDb(): Promise<IndexPayload | null> {
     [project.id],
   );
 
-  const wallet0 = wallets[0]?.address ?? PRIMARY_WALLET;
+  const walletList =
+    wallets.length > 0
+      ? wallets
+      : TRACKED_WALLETS.map((address, i) => ({
+          address,
+          label: mapWalletLabel(i, address),
+          sort_order: i,
+        }));
 
-  const pools = await query<IndexPoolRow>(
-    `SELECT
+  const wallet0 = walletList[0]?.address ?? PRIMARY_WALLET;
+
+  // Latest snapshot per (pool, map wallet), then sum by pool
+  type AggRow = {
+    pool_id: string;
+    pool_address: string;
+    pool_name: string | null;
+    token_mint: string;
+    token_symbol: string;
+    ansem_mint: string;
+    base_fee_pct: number | null;
+    status: string;
+    last_seen_at: string;
+    position_value_usd: number;
+    unclaimed_fees_usd: number;
+    claimed_fees_usd: number;
+    token_amount: number;
+    ansem_amount: number;
+    token_usd: number;
+    ansem_usd: number;
+    pool_tvl_usd: number | null;
+    volume_24h_usd: number | null;
+    price_change_24h: number | null;
+    market_cap_usd: number | null;
+    position_address: string | null;
+    map_wallets: string[];
+    snapshot_at: string | null;
+  };
+
+  const raw = await query<AggRow>(
+    `WITH latest AS (
+       SELECT DISTINCT ON (ps.pool_id, ps.controller_wallet)
+         ps.pool_id,
+         ps.controller_wallet,
+         ps.position_address,
+         ps.position_value_usd,
+         ps.unclaimed_fees_usd,
+         ps.claimed_fees_usd,
+         ps.token_amount,
+         ps.ansem_amount,
+         ps.token_usd,
+         ps.ansem_usd,
+         ps.pool_tvl_usd,
+         ps.volume_24h_usd,
+         ps.price_change_24h,
+         ps.market_cap_usd,
+         ps.snapshot_at
+       FROM pool_snapshots ps
+       ORDER BY ps.pool_id, ps.controller_wallet, ps.snapshot_at DESC
+     )
+     SELECT
        p.id AS pool_id,
        p.pool_address,
        p.pool_name,
@@ -204,31 +320,107 @@ export async function readIndexFromDb(): Promise<IndexPayload | null> {
        p.base_fee_pct::float8 AS base_fee_pct,
        p.status,
        p.last_seen_at::text AS last_seen_at,
-       COALESCE(s.position_value_usd, 0)::float8 AS position_value_usd,
-       COALESCE(s.unclaimed_fees_usd, 0)::float8 AS unclaimed_fees_usd,
-       COALESCE(s.claimed_fees_usd, 0)::float8 AS claimed_fees_usd,
-       COALESCE(s.token_amount, 0)::float8 AS token_amount,
-       COALESCE(s.ansem_amount, 0)::float8 AS ansem_amount,
-       COALESCE(s.token_usd, 0)::float8 AS token_usd,
-       COALESCE(s.ansem_usd, 0)::float8 AS ansem_usd,
-       s.pool_tvl_usd::float8 AS pool_tvl_usd,
-       s.volume_24h_usd::float8 AS volume_24h_usd,
-       s.price_change_24h::float8 AS price_change_24h,
-       s.market_cap_usd::float8 AS market_cap_usd,
-       s.position_address,
-       COALESCE(s.controller_wallet, $2) AS controller_wallet,
-       s.snapshot_at::text AS snapshot_at
+       COALESCE(SUM(l.position_value_usd), 0)::float8 AS position_value_usd,
+       COALESCE(SUM(l.unclaimed_fees_usd), 0)::float8 AS unclaimed_fees_usd,
+       COALESCE(SUM(l.claimed_fees_usd), 0)::float8 AS claimed_fees_usd,
+       COALESCE(SUM(l.token_amount), 0)::float8 AS token_amount,
+       COALESCE(SUM(l.ansem_amount), 0)::float8 AS ansem_amount,
+       COALESCE(SUM(l.token_usd), 0)::float8 AS token_usd,
+       COALESCE(SUM(l.ansem_usd), 0)::float8 AS ansem_usd,
+       MAX(l.pool_tvl_usd)::float8 AS pool_tvl_usd,
+       MAX(l.volume_24h_usd)::float8 AS volume_24h_usd,
+       MAX(l.price_change_24h)::float8 AS price_change_24h,
+       MAX(l.market_cap_usd)::float8 AS market_cap_usd,
+       (ARRAY_AGG(l.position_address ORDER BY l.position_value_usd DESC NULLS LAST))[1] AS position_address,
+       ARRAY_AGG(DISTINCT l.controller_wallet) FILTER (WHERE l.controller_wallet IS NOT NULL) AS map_wallets,
+       MAX(l.snapshot_at)::text AS snapshot_at
      FROM pools p
-     LEFT JOIN LATERAL (
-       SELECT * FROM pool_snapshots ps
-       WHERE ps.pool_id = p.id
-       ORDER BY ps.snapshot_at DESC
-       LIMIT 1
-     ) s ON true
+     LEFT JOIN latest l ON l.pool_id = p.id
      WHERE p.project_id = $1 AND p.status = 'open'
-     ORDER BY COALESCE(s.position_value_usd, 0) DESC`,
-    [project.id, wallet0],
+     GROUP BY p.id
+     ORDER BY COALESCE(SUM(l.position_value_usd), 0) DESC`,
+    [project.id],
   );
+
+  const total_position_usd = raw.reduce(
+    (s, p) => s + Number(p.position_value_usd || 0),
+    0,
+  );
+  const total_fees_usd = raw.reduce(
+    (s, p) => s + Number(p.unclaimed_fees_usd || 0),
+    0,
+  );
+  const total_claimed_fees_usd = raw.reduce(
+    (s, p) => s + Number(p.claimed_fees_usd || 0),
+    0,
+  );
+
+  const pools: IndexPoolRow[] = raw.map((p) => {
+    const value = Number(p.position_value_usd || 0);
+    return {
+      pool_id: p.pool_id,
+      pool_address: p.pool_address,
+      pool_name: p.pool_name,
+      token_mint: p.token_mint,
+      token_symbol: p.token_symbol,
+      ansem_mint: p.ansem_mint,
+      base_fee_pct: p.base_fee_pct,
+      status: p.status,
+      last_seen_at: p.last_seen_at,
+      position_value_usd: value,
+      unclaimed_fees_usd: Number(p.unclaimed_fees_usd || 0),
+      claimed_fees_usd: Number(p.claimed_fees_usd || 0),
+      token_amount: Number(p.token_amount || 0),
+      ansem_amount: Number(p.ansem_amount || 0),
+      token_usd: Number(p.token_usd || 0),
+      ansem_usd: Number(p.ansem_usd || 0),
+      pool_tvl_usd: p.pool_tvl_usd,
+      volume_24h_usd: p.volume_24h_usd,
+      price_change_24h: p.price_change_24h,
+      market_cap_usd: p.market_cap_usd,
+      position_address: p.position_address,
+      controller_wallet: (p.map_wallets ?? [])[0] ?? wallet0,
+      map_wallets: p.map_wallets ?? [],
+      share_pct: total_position_usd > 0 ? (value / total_position_usd) * 100 : 0,
+      snapshot_at: p.snapshot_at,
+    };
+  });
+
+  const map_wallets: MapWalletRow[] = walletList.map((w) => {
+    const mine = pools.filter((p) =>
+      (p.map_wallets ?? []).some(
+        (a) => a.toLowerCase() === w.address.toLowerCase(),
+      ),
+    );
+    const position_usd = mine.reduce(
+      (s, p) => s + Number(p.position_value_usd || 0),
+      0,
+    );
+    // Approximate: attribute full pool value if wallet is in map_wallets
+    // (merged row already summed; for map strip we count pools they touch)
+    return {
+      address: w.address,
+      label: w.label,
+      sort_order: w.sort_order,
+      pools: mine.length,
+      position_usd,
+      unclaimed_fees_usd: mine.reduce(
+        (s, p) => s + Number(p.unclaimed_fees_usd || 0),
+        0,
+      ),
+      claimed_fees_usd: mine.reduce(
+        (s, p) => s + Number(p.claimed_fees_usd || 0),
+        0,
+      ),
+      fees_earned_usd: mine.reduce(
+        (s, p) =>
+          s +
+          Number(p.unclaimed_fees_usd || 0) +
+          Number(p.claimed_fees_usd || 0),
+        0,
+      ),
+    };
+  });
 
   const lastIngest = await queryOne<{ finished_at: string }>(
     `SELECT finished_at::text FROM ingest_runs
@@ -237,96 +429,14 @@ export async function readIndexFromDb(): Promise<IndexPayload | null> {
     [project.id],
   );
 
-  const total_position_usd = pools.reduce(
-    (s, p) => s + Number(p.position_value_usd || 0),
-    0,
-  );
-  const total_fees_usd = pools.reduce(
-    (s, p) => s + Number(p.unclaimed_fees_usd || 0),
-    0,
-  );
-  const total_claimed_fees_usd = pools.reduce(
-    (s, p) => s + Number(p.claimed_fees_usd || 0),
-    0,
-  );
-
-  const walletList =
-    wallets.length > 0
-      ? wallets
-      : TRACKED_WALLETS.map((address, i) => ({
-          address,
-          label: `creator(${i})`,
-          sort_order: i,
-        }));
-
-  const creators = walletList.map((w) => {
-    const mine = pools.filter(
-      (p) =>
-        (p.controller_wallet || wallet0).toLowerCase() ===
-        w.address.toLowerCase(),
-    );
-    const position_usd = mine.reduce(
-      (s, p) => s + Number(p.position_value_usd || 0),
-      0,
-    );
-    const unclaimed_fees_usd = mine.reduce(
-      (s, p) => s + Number(p.unclaimed_fees_usd || 0),
-      0,
-    );
-    const claimed_fees_usd = mine.reduce(
-      (s, p) => s + Number(p.claimed_fees_usd || 0),
-      0,
-    );
-    return {
-      address: w.address,
-      label: w.label?.startsWith("wallet")
-        ? w.label.replace("wallet", "creator")
-        : w.label || `creator(${w.sort_order})`,
-      sort_order: w.sort_order,
-      pools: mine.length,
-      position_usd,
-      unclaimed_fees_usd,
-      claimed_fees_usd,
-      fees_earned_usd: unclaimed_fees_usd + claimed_fees_usd,
-    };
-  });
-
-  // Single creator book: if attribution missed, give all open pools to creator(0)
-  if (
-    creators.length === 1 &&
-    creators[0]!.pools === 0 &&
-    pools.length > 0
-  ) {
-    creators[0] = {
-      ...creators[0]!,
-      pools: pools.length,
-      position_usd: total_position_usd,
-      unclaimed_fees_usd: total_fees_usd,
-      claimed_fees_usd: total_claimed_fees_usd,
-      fees_earned_usd: total_fees_usd + total_claimed_fees_usd,
-    };
-  }
-
-  // If pools exist but no wallet match (legacy), attribute all to wallet0
-  if (creators.length === 0 && pools.length > 0) {
-    creators.push({
-      address: wallet0,
-      label: "creator(0)",
-      sort_order: 0,
-      pools: pools.length,
-      position_usd: total_position_usd,
-      unclaimed_fees_usd: total_fees_usd,
-      claimed_fees_usd: total_claimed_fees_usd,
-      fees_earned_usd: total_fees_usd + total_claimed_fees_usd,
-    });
-  }
-
   return {
     source: "db",
     index_token: INDEX_TOKEN_SYMBOL,
     wallet0,
     wallets: walletList,
-    creators,
+    map_wallets,
+    /** @deprecated use map_wallets — kept for older clients */
+    creators: map_wallets,
     ansem_mint: project.mint,
     treasury_usd: 0,
     ingested_at: lastIngest?.finished_at ?? null,

@@ -102,7 +102,7 @@ export function HolderPanel({ pool, onClose }: Props) {
   const holderSlices = useMemo(() => {
     const slices: PieSlice[] = holders.map((h) => ({
       id: h.owner,
-      label: h.isController ? "wallet(0)" : shortCa(h.owner, 4, 4),
+      label: h.isController ? "map wallet" : shortCa(h.owner, 4, 4),
       value: h.amountUi,
     }));
     return consolidateSlices(slices, { maxSlices: 10, minPct: 0.5 });
@@ -188,7 +188,7 @@ export function HolderPanel({ pool, onClose }: Props) {
                       }
                     >
                       {shortCa(h.owner, 4, 4)}
-                      {h.isController ? " · wallet(0)" : ""}
+                      {h.isController ? " · map" : ""}
                     </span>
                     <span className="ml-auto tabular-nums text-zinc-500">
                       {h.pctOfTop.toFixed(1)}%

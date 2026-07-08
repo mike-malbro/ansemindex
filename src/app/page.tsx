@@ -2,7 +2,6 @@ import Link from "next/link";
 import { SiteNav } from "@/components/SiteNav";
 import { HomeIndex } from "@/components/HomeIndex";
 import { FeeFlywheelChart } from "@/components/whitepaper/FeeFlywheelChart";
-import { INDEX_TOKEN_SYMBOL } from "@/lib/config";
 import {
   ANSEM_TARGET_PCT,
   BASE_FEE_PCT,
@@ -13,9 +12,9 @@ import {
 } from "@/lib/thesis";
 
 export const metadata = {
-  title: `$${INDEX_TOKEN_SYMBOL} · Creator wallets`,
+  title: "ANSEM Index · Pool list",
   description:
-    "$ANSEMINDEX — creator wallets, live fees, TOKEN–ANSEM pools. Click a creator to drill down.",
+    "DAMM v2 TOKEN–ANSEM pools. ANSEM creator fees buy by proportional share. Nodes optional.",
 };
 
 export default function GuideHome() {
@@ -24,26 +23,32 @@ export default function GuideHome() {
       <SiteNav current="/" />
 
       <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-        <p className="text-[10px] uppercase tracking-widest text-amber-200/80">
-          ${INDEX_TOKEN_SYMBOL}
+        <p className="text-[10px] uppercase tracking-widest text-zinc-500">
+          Public hub · no keys · auto map wallets
         </p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-          ${INDEX_TOKEN_SYMBOL}
+          ANSEM Index
         </h1>
         <p className="mt-3 max-w-xl text-sm leading-relaxed text-zinc-400">
-          The index is <span className="text-zinc-200">creator wallets</span>{" "}
-          seeding TOKEN–ANSEM pools on Meteora. Click a creator → drill down
-          into that wallet. Fees shown are real LP fees. ${INDEX_TOKEN_SYMBOL}{" "}
-          treasury stays $0 until creator fees. DAMM v2 at {BASE_FEE_PCT}% ·
-          flywheel to {(ANSEM_TARGET_PCT * 100).toFixed(0)}% ANSEM.
+          The index is the list of Meteora DAMM v2 TOKEN–ANSEM pools. ANSEM
+          creator fees buy those tokens by Share %. Map wallets auto-ingest —
+          including every tracked pubkey. Nodes invest at their own will. DAMM
+          v2 at {BASE_FEE_PCT}% · flywheel to{" "}
+          {(ANSEM_TARGET_PCT * 100).toFixed(0)}% ANSEM.
         </p>
 
         <div className="mt-6 flex flex-wrap gap-3">
           <Link
-            href="#creators"
+            href="#index"
             className="inline-flex items-center rounded border border-amber-800/50 bg-amber-950/20 px-4 py-2.5 text-sm text-amber-100/90 transition hover:border-amber-700/60"
           >
-            Creator wallets ↓
+            View pools ↓
+          </Link>
+          <Link
+            href="/launchpad"
+            className="inline-flex items-center rounded border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm text-zinc-200 transition hover:border-zinc-500"
+          >
+            Launchpad →
           </Link>
           <Link
             href="/whitepaper"
@@ -58,8 +63,8 @@ export default function GuideHome() {
         <section id="fee-chart" className="mt-12">
           <h2 className="text-sm font-semibold text-zinc-200">Fee chart</h2>
           <p className="mt-1 text-[11px] text-zinc-500">
-            Creator fees → buy → seed until {(ANSEM_TARGET_PCT * 100).toFixed(0)}
-            % ANSEM → buybacks.
+            ANSEM creator fees → buy index by share →{" "}
+            {(ANSEM_TARGET_PCT * 100).toFixed(0)}% gate → buybacks.
           </p>
           <div className="mt-4">
             <FeeFlywheelChart />

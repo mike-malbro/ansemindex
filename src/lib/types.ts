@@ -171,7 +171,7 @@ export type PortfolioPayload = {
   positions: EnrichedPosition[];
 };
 
-/** Live index row (controller wallet pool + latest snapshot). */
+/** Live index row (merged across map wallets). */
 export type IndexPoolRow = {
   pool_id: string;
   pool_address: string;
@@ -194,12 +194,17 @@ export type IndexPoolRow = {
   price_change_24h: number | null;
   market_cap_usd: number | null;
   position_address: string | null;
+  /** Primary map wallet (first) — prefer map_wallets */
   controller_wallet: string;
+  /** All map wallets holding LP in this pool */
+  map_wallets: string[];
+  /** Pool value / total index value * 100 */
+  share_pct: number;
   snapshot_at: string | null;
 };
 
-/** One creator wallet in the $ANSEMINDEX book */
-export type CreatorWalletRow = {
+/** Map wallet = discovery pubkey (not the index itself). */
+export type MapWalletRow = {
   address: string;
   label: string;
   sort_order: number;
@@ -210,24 +215,24 @@ export type CreatorWalletRow = {
   fees_earned_usd: number;
 };
 
+/** @deprecated use MapWalletRow */
+export type CreatorWalletRow = MapWalletRow;
+
 export type IndexPayload = {
   source: "db" | "live";
-  /** Brand */
   index_token: string;
   wallet0: string;
   wallets: { address: string; label: string; sort_order: number }[];
-  /** Creator wallets — primary UI list */
-  creators: CreatorWalletRow[];
+  map_wallets: MapWalletRow[];
+  /** @deprecated alias of map_wallets */
+  creators: MapWalletRow[];
   ansem_mint: string;
   treasury_usd: number;
   ingested_at: string | null;
   total_pools: number;
   total_position_usd: number;
-  /** Unclaimed LP fees on creator positions */
   total_fees_usd: number;
-  /** Already-claimed LP fees (lifetime on open positions) */
   total_claimed_fees_usd: number;
-  /** unclaimed + claimed */
   total_fees_earned_usd: number;
   pools: IndexPoolRow[];
 };

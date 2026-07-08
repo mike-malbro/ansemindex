@@ -2,7 +2,8 @@ import Link from "next/link";
 
 const LINKS = [
   { href: "/", label: "Home" },
-  { href: "/book", label: "Creators" },
+  { href: "/book", label: "Index" },
+  { href: "/launchpad", label: "Launchpad" },
   { href: "/whitepaper", label: "Whitepaper" },
   { href: "/roadmap", label: "Roadmap" },
   { href: "/manage", label: "Manage" },
@@ -12,10 +13,13 @@ export function SiteNav({ current }: { current?: string }) {
   return (
     <header className="border-b border-zinc-800 bg-zinc-950/90 px-4 py-3 backdrop-blur sm:px-6">
       <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3">
-        <Link href="/" className="font-mono text-sm font-semibold tracking-tight text-zinc-100">
-          $ANSEMINDEX
+        <Link
+          href="/"
+          className="font-mono text-sm font-semibold tracking-tight text-zinc-100"
+        >
+          ANSEM Index
           <span className="ml-2 text-[10px] font-normal uppercase tracking-widest text-zinc-500">
-            creators
+            pools
           </span>
         </Link>
         <nav className="flex flex-wrap gap-1">

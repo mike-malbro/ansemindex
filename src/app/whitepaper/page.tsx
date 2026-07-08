@@ -8,8 +8,11 @@ import {
   BASE_FEE_PCT,
   EXPLAIN_FEE_1PCT,
   EXPLAIN_INDEX,
+  EXPLAIN_LAUNCHPAD,
   EXPLAIN_METEORA,
+  EXPLAIN_NODES,
   EXPLAIN_POOL,
+  EXPLAIN_PRO_RATA,
   FEE_CHART,
   HOW_TO_SHORT,
   MISSION,
@@ -19,12 +22,12 @@ import {
   WHITEPAPER_UPDATED_NOTE,
   WHITEPAPER_VERSION,
 } from "@/lib/thesis";
-import { START_LIST, WHITEPAPER_TITLE } from "@/lib/whitepaper";
+import { WHITEPAPER_TITLE } from "@/lib/whitepaper";
 
 export const metadata = {
   title: `${WHITEPAPER_TITLE} v${WHITEPAPER_VERSION} · ANSEM INDEX`,
   description:
-    "v1.0 how-to: the index wallet, Meteora pools, 1% fees, 70% ANSEM fee chart, and roadmap.",
+    "v1.1: pool index, proportional shares, ANSEM creator fees, launchpad, nodes. No keys on the hub.",
 };
 
 function Section({
@@ -69,7 +72,6 @@ export default function WhitepaperPage() {
       </nav>
 
       <main className="mx-auto max-w-3xl px-4 sm:px-6">
-        {/* 1 — Cover */}
         <Section id="cover">
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded border border-amber-800/60 bg-amber-950/30 px-2 py-0.5 text-[10px] uppercase tracking-widest text-amber-200/90">
@@ -98,7 +100,6 @@ export default function WhitepaperPage() {
           </ul>
         </Section>
 
-        {/* Index = wallet(0) */}
         <Section id="index">
           <h2 className="text-lg font-semibold">{EXPLAIN_INDEX.title}</h2>
           <p className="mt-3 text-sm leading-relaxed text-zinc-400">
@@ -117,13 +118,29 @@ export default function WhitepaperPage() {
           <p className="mt-4 text-xs text-zinc-500">
             Open it:{" "}
             <Link href="/book" className="text-sky-400 hover:underline">
-              /book · Creators
+              /book · Index
             </Link>
-            .
+            . Map wallets auto-ingest on refresh.
           </p>
         </Section>
 
-        {/* Meteora */}
+        <Section id="shares">
+          <h2 className="text-lg font-semibold">{EXPLAIN_PRO_RATA.title}</h2>
+          <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+            {EXPLAIN_PRO_RATA.body}
+          </p>
+          <ul className="mt-4 space-y-2">
+            {EXPLAIN_PRO_RATA.bullets.map((b) => (
+              <li
+                key={b}
+                className="text-xs text-zinc-500 before:mr-2 before:content-['·']"
+              >
+                {b}
+              </li>
+            ))}
+          </ul>
+        </Section>
+
         <Section id="meteora">
           <h2 className="text-lg font-semibold">{EXPLAIN_METEORA.title}</h2>
           <p className="mt-3 text-sm leading-relaxed text-zinc-400">
@@ -131,14 +148,16 @@ export default function WhitepaperPage() {
           </p>
           <ul className="mt-4 space-y-2">
             {EXPLAIN_METEORA.bullets.map((b) => (
-              <li key={b} className="text-xs text-zinc-500 before:mr-2 before:content-['·']">
+              <li
+                key={b}
+                className="text-xs text-zinc-500 before:mr-2 before:content-['·']"
+              >
                 {b}
               </li>
             ))}
           </ul>
         </Section>
 
-        {/* 3 — Pool */}
         <Section id="pool">
           <h2 className="text-lg font-semibold">{EXPLAIN_POOL.title}</h2>
           <p className="mt-3 text-sm leading-relaxed text-zinc-400">
@@ -149,38 +168,31 @@ export default function WhitepaperPage() {
           </div>
           <ul className="mt-4 space-y-2">
             {EXPLAIN_POOL.bullets.map((b) => (
-              <li key={b} className="text-xs text-zinc-500 before:mr-2 before:content-['·']">
+              <li
+                key={b}
+                className="text-xs text-zinc-500 before:mr-2 before:content-['·']"
+              >
                 {b}
               </li>
             ))}
           </ul>
-        </Section>
-
-        {/* 4 — Fees */}
-        <Section id="fees">
-          <h2 className="text-lg font-semibold">{EXPLAIN_FEE_1PCT.title}</h2>
-          <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+          <h3 className="mt-8 text-sm font-semibold text-zinc-200">
+            {EXPLAIN_FEE_1PCT.title}
+          </h3>
+          <p className="mt-2 text-sm leading-relaxed text-zinc-400">
             {EXPLAIN_FEE_1PCT.body}
           </p>
           <div className="mt-6">
             <FeeCompoundChart />
           </div>
-          <ul className="mt-4 space-y-2">
-            {EXPLAIN_FEE_1PCT.bullets.map((b) => (
-              <li key={b} className="text-xs text-zinc-500 before:mr-2 before:content-['·']">
-                {b}
-              </li>
-            ))}
-          </ul>
         </Section>
 
-        {/* 5 — Flywheel */}
         <Section id="flywheel">
           <h2 className="text-lg font-semibold">{FEE_CHART.title}</h2>
           <p className="mt-3 text-sm leading-relaxed text-zinc-400">
-            Creator fees buy tokens and ANSEM. While ANSEM is under {pct}% of the
-            program, send and seed. At {pct}% or more, the same fees go to all
-            buybacks. Base fee on pools: {BASE_FEE_PCT}%.
+            ANSEM creator fees buy index tokens by share. While ANSEM is under{" "}
+            {pct}% of the program, send and seed. At {pct}% or more, the same
+            fees go to all buybacks. Base fee on pools: {BASE_FEE_PCT}%.
           </p>
           <div className="mt-6">
             <FeeFlywheelChart />
@@ -215,15 +227,55 @@ export default function WhitepaperPage() {
           </ol>
         </Section>
 
-        {/* 6 — How-to */}
+        <Section id="launchpad">
+          <h2 className="text-lg font-semibold">{EXPLAIN_LAUNCHPAD.title}</h2>
+          <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+            {EXPLAIN_LAUNCHPAD.body}
+          </p>
+          <ul className="mt-4 space-y-2">
+            {EXPLAIN_LAUNCHPAD.bullets.map((b) => (
+              <li
+                key={b}
+                className="text-xs text-zinc-500 before:mr-2 before:content-['·']"
+              >
+                {b}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-4 text-xs text-zinc-500">
+            Stub:{" "}
+            <Link href="/launchpad" className="text-sky-400 hover:underline">
+              /launchpad
+            </Link>
+            .
+          </p>
+        </Section>
+
+        <Section id="nodes">
+          <h2 className="text-lg font-semibold">{EXPLAIN_NODES.title}</h2>
+          <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+            {EXPLAIN_NODES.body}
+          </p>
+          <ul className="mt-4 space-y-2">
+            {EXPLAIN_NODES.bullets.map((b) => (
+              <li
+                key={b}
+                className="text-xs text-zinc-500 before:mr-2 before:content-['·']"
+              >
+                {b}
+              </li>
+            ))}
+          </ul>
+        </Section>
+
         <Section id="howto">
           <h2 className="text-lg font-semibold">How-to</h2>
           <p className="mt-2 text-xs text-zinc-500">
-            Short path. Start list lives in Manage / Book —{" "}
+            Short path. Live book:{" "}
             <Link href="/book" className="text-sky-400 hover:underline">
-              open the book
-            </Link>{" "}
-            ({START_LIST.length} nodes).
+              /book
+            </Link>
+            .
           </p>
           <ol className="mt-6 space-y-3">
             {HOW_TO_SHORT.map((step) => (
@@ -247,12 +299,11 @@ export default function WhitepaperPage() {
           </ol>
         </Section>
 
-        {/* 7 — Roadmap */}
         <Section id="roadmap">
           <h2 className="text-lg font-semibold">Roadmap</h2>
           <p className="mt-2 text-sm text-zinc-400">
-            Pools → nodes → flywheel → long SOL / long ANSEM → brain → index
-            token. Rules can shift as data arrives.
+            Pools → launchpad → nodes → flywheel → long SOL / long ANSEM →
+            brain. Rules can shift as data arrives.
           </p>
           <ol className="mt-6 space-y-3">
             {ROADMAP_PHASES.map((p) => (

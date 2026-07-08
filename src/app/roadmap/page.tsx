@@ -5,7 +5,7 @@ import { ROADMAP_PHASES, WHITEPAPER_VERSION } from "@/lib/thesis";
 export const metadata = {
   title: "Roadmap · ANSEM INDEX",
   description:
-    "Pools → nodes → flywheel → long SOL → long ANSEM → brain → index token.",
+    "Pools → launchpad → nodes → flywheel → long SOL → long ANSEM → brain.",
 };
 
 export default function RoadmapPage() {
@@ -17,12 +17,12 @@ export default function RoadmapPage() {
           Strategic roadmap
         </p>
         <h1 className="mt-2 text-2xl font-semibold">
-          Pools → flywheel → long SOL / ANSEM
+          Pools → launchpad → nodes → flywheel
         </h1>
         <p className="mt-2 max-w-xl text-sm text-zinc-400">
-          Start with pools and the fee chart. Nodes and flywheel next. Optional
-          longs after the core loop is stable. Adaptive “brain” only with a
-          dataset — and never with keys on the public hub.
+          Start with the pool index and fee chart. Launchpad next. Nodes and
+          flywheel after. Optional longs once the core loop is stable — never
+          with keys on the public hub.
         </p>
 
         <ol className="mt-10 space-y-4">

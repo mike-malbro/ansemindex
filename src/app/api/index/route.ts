@@ -1,27 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PRIMARY_WALLET } from "@/lib/config";
 import { hasDatabase } from "@/lib/db";
-import { ingestControllerWallet, readIndexFromDb } from "@/lib/ingest";
+import {
+  ingestAllMapWallets,
+  ingestControllerWallet,
+  readIndexFromDb,
+} from "@/lib/ingest";
+import { assertNoSecrets } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 120;
 
-/** GET /api/index — live index from DB (controller wallet book). */
+/** GET /api/index — merged pool index from all map wallets (auto). */
 export async function GET(req: NextRequest) {
   try {
     const refresh = req.nextUrl.searchParams.get("refresh") === "1";
+    const oneWallet = req.nextUrl.searchParams.get("wallet")?.trim();
 
-    if (refresh && hasDatabase()) {
-      await ingestControllerWallet(
-        req.nextUrl.searchParams.get("wallet")?.trim() || PRIMARY_WALLET,
-      );
+    if (hasDatabase() && refresh) {
+      if (oneWallet) {
+        await ingestControllerWallet(oneWallet);
+      } else {
+        // Auto: every TRACKED_WALLETS pubkey
+        await ingestAllMapWallets();
+      }
     }
 
     let index = await readIndexFromDb();
 
-    // Cold start: ingest once if DB empty
     if (hasDatabase() && (!index || index.pools.length === 0)) {
-      await ingestControllerWallet(PRIMARY_WALLET);
+      await ingestAllMapWallets();
       index = await readIndexFromDb();
     }
 
@@ -43,7 +50,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-/** POST /api/index — force ingest from controller wallet. */
+/** POST /api/index — force auto-ingest all map wallets. */
 export async function POST(req: NextRequest) {
   try {
     if (!hasDatabase()) {
@@ -52,20 +59,39 @@ export async function POST(req: NextRequest) {
         { status: 503 },
       );
     }
-    const body = (await req.json().catch(() => ({}))) as { wallet?: string };
-    const result = await ingestControllerWallet(
-      body.wallet?.trim() || PRIMARY_WALLET,
-    );
+    const body = await req.json().catch(() => ({}));
+    assertNoSecrets(body);
+
+    const wallet =
+      typeof body === "object" &&
+      body &&
+      "wallet" in body &&
+      typeof (body as { wallet?: string }).wallet === "string"
+        ? (body as { wallet: string }).wallet.trim()
+        : "";
+
+    const result = wallet
+      ? await ingestControllerWallet(wallet)
+      : await ingestAllMapWallets();
     const index = await readIndexFromDb();
     return NextResponse.json({
       ok: true,
-      poolsUpserted: result.poolsUpserted,
-      positionsSeen: result.positionsSeen,
+      ...("wallets" in result
+        ? {
+            wallets: result.wallets,
+            poolsUpserted: result.poolsUpserted,
+            positionsSeen: result.positionsSeen,
+          }
+        : {
+            poolsUpserted: result.poolsUpserted,
+            positionsSeen: result.positionsSeen,
+          }),
       index,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("[api/index POST]", message);
-    return NextResponse.json({ error: message }, { status: 502 });
+    const status = message.startsWith("Rejected secret") ? 400 : 502;
+    return NextResponse.json({ error: message }, { status });
   }
 }
