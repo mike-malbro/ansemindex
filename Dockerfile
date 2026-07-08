@@ -4,19 +4,21 @@ FROM node:22-alpine AS deps
 RUN corepack enable && corepack prepare pnpm@10.32.1 --activate
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-# Workspace includes keeper — copy its manifest so pnpm install resolves
 COPY keeper/package.json ./keeper/package.json
+# Install hub deps only; keeper is a separate Railway service
 RUN pnpm install --frozen-lockfile --filter ansemindex...
 
 FROM node:22-alpine AS builder
 RUN corepack enable && corepack prepare pnpm@10.32.1 --activate
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/keeper/node_modules ./keeper/node_modules
+COPY --from=deps /app/package.json ./package.json
+# Copy source (exclude heavy paths via .dockerignore)
 COPY . .
+# Ensure workspace package.json exists for pnpm without needing keeper node_modules
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
-RUN pnpm build
+RUN pnpm --filter ansemindex build
 
 FROM node:22-alpine AS runner
 WORKDIR /app
