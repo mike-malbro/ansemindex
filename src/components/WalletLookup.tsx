@@ -33,7 +33,7 @@ function setWalletParam(wallet: string | null) {
   window.history.replaceState({}, "", url.toString());
 }
 
-/** Paste a pubkey — see index holdings + open DAMM positions. No keys. */
+/** Paste a pubkey — see your portfolio against the index. No keys. */
 export function WalletLookup() {
   const [input, setInput] = useState("");
   const [wallet, setWallet] = useState<string | null>(null);
@@ -132,11 +132,11 @@ export function WalletLookup() {
     <div className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 px-4 py-4 sm:px-6">
       <div>
         <h1 className="font-mono text-lg font-semibold text-zinc-100">
-          Wallet lookup
+          Wallet
         </h1>
         <p className="mt-1 max-w-xl font-mono text-[11px] text-zinc-500">
-          Paste your wallet. See index-token holdings and open TOKEN–ANSEM LP
-          positions. Pubkeys only — never private keys.
+          Paste any wallet. See its portfolio against the index — token
+          holdings + open TOKEN–ANSEM LPs. Pubkeys only.
         </p>
       </div>
 
@@ -329,7 +329,7 @@ export function WalletLookup() {
 
       {!wallet && !loading && !error && (
         <p className="py-10 text-center font-mono text-xs text-zinc-600">
-          Paste a pubkey above to see your shit.
+          Paste a pubkey above to see the portfolio index.
         </p>
       )}
     </div>
