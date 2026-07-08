@@ -3,6 +3,8 @@ import { cacheGet, cacheSet } from "./cache";
 const RPC_CANDIDATES = [
   process.env.SOLANA_RPC_URL,
   "https://solana-rpc.publicnode.com",
+  "https://solana.drpc.org",
+  "https://endpoints.omniatech.io/v1/solana/mainnet/public",
   "https://api.mainnet-beta.solana.com",
 ].filter(Boolean) as string[];
 

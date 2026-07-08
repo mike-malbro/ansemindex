@@ -45,21 +45,36 @@ export async function GET(
       ? Math.min(Math.max(Math.floor(limitRaw), 1), 25)
       : 10;
 
-    const holders = await rankTokenHolders(mint, {
-      controllerWallets: TRACKED_WALLETS.length
-        ? TRACKED_WALLETS
-        : [PRIMARY_WALLET],
-      limit,
-    });
+    try {
+      const holders = await rankTokenHolders(mint, {
+        controllerWallets: TRACKED_WALLETS.length
+          ? TRACKED_WALLETS
+          : [PRIMARY_WALLET],
+        limit,
+      });
 
-    return NextResponse.json({
-      pool_address: address,
-      mint,
-      token_symbol: tokenSymbol,
-      note: "Top 10 token holders (SPL largest accounts). Click a row for their index pie.",
-      holders,
-      fetched_at: new Date().toISOString(),
-    });
+      return NextResponse.json({
+        pool_address: address,
+        mint,
+        token_symbol: tokenSymbol,
+        note: "Top 10 token holders (SPL largest accounts). Click a row for their index pie.",
+        holders,
+        fetched_at: new Date().toISOString(),
+      });
+    } catch (rpcErr) {
+      const message =
+        rpcErr instanceof Error ? rpcErr.message : "RPC unavailable";
+      console.error("[api/pool/holders] rpc", message);
+      return NextResponse.json({
+        pool_address: address,
+        mint,
+        token_symbol: tokenSymbol,
+        note: "Holder ranks temporarily unavailable (Solana RPC). Index pies still work.",
+        holders: [],
+        warning: message,
+        fetched_at: new Date().toISOString(),
+      });
+    }
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("[api/pool/holders]", message);
