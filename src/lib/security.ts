@@ -38,3 +38,16 @@ export function assertNoSecrets(
     }
   }
 }
+
+/** Client-side: reject pasted secrets before any API call. */
+export function looksLikeSecret(value: string): boolean {
+  return SECRET_VALUE_HINT.test(value);
+}
+
+/** Rough Solana base58 pubkey check (32–44 chars, no 0/O/I/l). */
+export function isLikelyPubkey(value: string): boolean {
+  const v = value.trim();
+  if (v.length < 32 || v.length > 44) return false;
+  if (!/^[1-9A-HJ-NP-Za-km-z]+$/.test(v)) return false;
+  return !looksLikeSecret(v);
+}

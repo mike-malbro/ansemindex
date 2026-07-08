@@ -16,8 +16,8 @@ import { PieChart, consolidateSlices, type PieSlice } from "./PieChart";
 import { HolderPanel } from "./HolderPanel";
 
 /**
- * $ANSEMINDEX book: creator wallets first.
- * Click a creator → drill-down at the bottom (pools, pies, holders).
+ * $ANSEMINDEX creators — map wallets that seed the pool book.
+ * Click a creator → drill-down (pools, pies, holders). Not the index itself.
  */
 export function CreatorBook({ embedded = false }: { embedded?: boolean }) {
   const [data, setData] = useState<IndexPayload | null>(null);
@@ -59,33 +59,44 @@ export function CreatorBook({ embedded = false }: { embedded?: boolean }) {
     const params = new URLSearchParams(window.location.search);
     const c = params.get("creator");
     const p = params.get("pool");
+    const creators = data.map_wallets?.length
+      ? data.map_wallets
+      : data.creators;
     if (c) setSelectedCreator(c);
-    else if (data.creators[0]) setSelectedCreator(data.creators[0].address);
+    else if (creators[0]) setSelectedCreator(creators[0].address);
     if (p) {
       const row = data.pools.find((x) => x.pool_address === p);
       if (row) {
         setSelectedPool(row);
-        setSelectedCreator(row.controller_wallet || data.wallet0);
+        const fromMap = row.map_wallets?.[0];
+        setSelectedCreator(fromMap || row.controller_wallet || data.wallet0);
       }
     }
   }, [data]);
 
+  const creatorList = useMemo((): CreatorWalletRow[] => {
+    if (!data) return [];
+    return data.map_wallets?.length ? data.map_wallets : data.creators;
+  }, [data]);
+
   const creator: CreatorWalletRow | null = useMemo(() => {
-    if (!data || !selectedCreator) return null;
+    if (!selectedCreator) return null;
     return (
-      data.creators.find(
+      creatorList.find(
         (c) => c.address.toLowerCase() === selectedCreator.toLowerCase(),
       ) ?? null
     );
-  }, [data, selectedCreator]);
+  }, [creatorList, selectedCreator]);
 
   const creatorPools = useMemo(() => {
     if (!data || !selectedCreator) return [];
-    return data.pools.filter(
-      (p) =>
-        (p.controller_wallet || data.wallet0).toLowerCase() ===
-        selectedCreator.toLowerCase(),
-    );
+    const sel = selectedCreator.toLowerCase();
+    return data.pools.filter((p) => {
+      const maps = p.map_wallets?.length
+        ? p.map_wallets
+        : [p.controller_wallet || data.wallet0];
+      return maps.some((a) => a.toLowerCase() === sel);
+    });
   }, [data, selectedCreator]);
 
   const composition = useMemo(() => {
@@ -122,11 +133,11 @@ export function CreatorBook({ embedded = false }: { embedded?: boolean }) {
             ${token}
           </p>
           <h1 className="mt-1 font-mono text-lg font-semibold text-zinc-100">
-            Creator wallets
+            $ANSEMINDEX creators
           </h1>
           <p className="mt-1 max-w-xl font-mono text-[11px] text-zinc-500">
-            The index is the set of creator wallets seeding TOKEN–ANSEM pools.
-            Click a creator to drill down below — pools, fees, holders.
+            Map wallets that seed TOKEN–ANSEM pools into the index. Click a
+            creator to drill down — pools, fees, holders. Pubkeys only.
           </p>
         </div>
         <button
@@ -157,7 +168,7 @@ export function CreatorBook({ embedded = false }: { embedded?: boolean }) {
         <>
           {/* Totals */}
           <section className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-            <Stat label="Creators" value={String(data.creators.length)} />
+            <Stat label="Creators" value={String(creatorList.length)} />
             <Stat label="Pools" value={String(data.total_pools)} />
             <Stat
               label="Pool amount"
@@ -202,7 +213,7 @@ export function CreatorBook({ embedded = false }: { embedded?: boolean }) {
                 </tr>
               </thead>
               <tbody>
-                {data.creators.map((c) => {
+                {creatorList.map((c) => {
                   const sel =
                     selectedCreator?.toLowerCase() === c.address.toLowerCase();
                   return (
