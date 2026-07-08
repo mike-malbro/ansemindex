@@ -54,6 +54,16 @@ export const EXPLAIN_FEE_1PCT = {
   ],
 } as const;
 
+export const EXPLAIN_INDEX = {
+  title: "The index = wallet(0)",
+  body: "wallet(0) is the controller pubkey. Its open TOKEN–ANSEM Meteora positions are the index. We read them from Meteora, store them in Postgres, and show pool amounts on the Index page. This is a map — not our fee treasury (that stays $0 until creator fees exist). Click a pool to see ranked top holders of that token.",
+  bullets: [
+    "Source: controller wallet open positions",
+    "Stored continuously in the database",
+    "Dashboard shows wallet(0) + pool amounts + holder ranks",
+  ],
+} as const;
+
 export const THESIS = {
   why: {
     title: "Why we’re doing this",
@@ -162,10 +172,10 @@ export const HOW_TO_GUIDE = [
   {
     id: "controller-book",
     n: 3,
-    title: "Study the controller book",
-    body: "Public read of TOKEN–ANSEM pools — the map, not our treasury.",
+    title: "Open the index",
+    body: "wallet(0) pools + amounts + holder ranks — the map, not our treasury.",
     href: "/book",
-    cta: "Open book",
+    cta: "Open index",
   },
   {
     id: "wallets",
@@ -247,6 +257,7 @@ export const ROADMAP_PHASES = [
 
 export const WHITEPAPER_NAV = [
   { id: "cover", label: "Cover" },
+  { id: "index", label: "Index" },
   { id: "meteora", label: "Meteora" },
   { id: "pool", label: "Pools" },
   { id: "fees", label: "1% fees" },

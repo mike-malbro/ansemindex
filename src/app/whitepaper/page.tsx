@@ -7,6 +7,7 @@ import {
   ANSEM_TARGET_PCT,
   BASE_FEE_PCT,
   EXPLAIN_FEE_1PCT,
+  EXPLAIN_INDEX,
   EXPLAIN_METEORA,
   EXPLAIN_POOL,
   FEE_CHART,
@@ -23,7 +24,7 @@ import { START_LIST, WHITEPAPER_TITLE } from "@/lib/whitepaper";
 export const metadata = {
   title: `${WHITEPAPER_TITLE} v${WHITEPAPER_VERSION} · ANSEM INDEX`,
   description:
-    "v1.0 how-to: Meteora, liquidity pools, 1% fees, 70% ANSEM fee chart, and roadmap.",
+    "v1.0 how-to: the index wallet, Meteora pools, 1% fees, 70% ANSEM fee chart, and roadmap.",
 };
 
 function Section({
@@ -97,7 +98,32 @@ export default function WhitepaperPage() {
           </ul>
         </Section>
 
-        {/* 2 — Meteora */}
+        {/* Index = wallet(0) */}
+        <Section id="index">
+          <h2 className="text-lg font-semibold">{EXPLAIN_INDEX.title}</h2>
+          <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+            {EXPLAIN_INDEX.body}
+          </p>
+          <ul className="mt-4 space-y-2">
+            {EXPLAIN_INDEX.bullets.map((b) => (
+              <li
+                key={b}
+                className="text-xs text-zinc-500 before:mr-2 before:content-['·']"
+              >
+                {b}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-4 text-xs text-zinc-500">
+            Open it:{" "}
+            <Link href="/book" className="text-sky-400 hover:underline">
+              /book · Index
+            </Link>
+            .
+          </p>
+        </Section>
+
+        {/* Meteora */}
         <Section id="meteora">
           <h2 className="text-lg font-semibold">{EXPLAIN_METEORA.title}</h2>
           <p className="mt-3 text-sm leading-relaxed text-zinc-400">

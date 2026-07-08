@@ -170,3 +170,42 @@ export type PortfolioPayload = {
   totals: PortfolioTotals;
   positions: EnrichedPosition[];
 };
+
+/** Live index row (controller wallet pool + latest snapshot). */
+export type IndexPoolRow = {
+  pool_id: string;
+  pool_address: string;
+  pool_name: string | null;
+  token_mint: string;
+  token_symbol: string;
+  ansem_mint: string;
+  base_fee_pct: number | null;
+  status: string;
+  last_seen_at: string;
+  position_value_usd: number;
+  unclaimed_fees_usd: number;
+  token_amount: number;
+  ansem_amount: number;
+  token_usd: number;
+  ansem_usd: number;
+  pool_tvl_usd: number | null;
+  volume_24h_usd: number | null;
+  price_change_24h: number | null;
+  market_cap_usd: number | null;
+  position_address: string | null;
+  controller_wallet: string;
+  snapshot_at: string | null;
+};
+
+export type IndexPayload = {
+  source: "db" | "live";
+  wallet0: string;
+  wallets: { address: string; label: string; sort_order: number }[];
+  ansem_mint: string;
+  treasury_usd: number;
+  ingested_at: string | null;
+  total_pools: number;
+  total_position_usd: number;
+  total_fees_usd: number;
+  pools: IndexPoolRow[];
+};
