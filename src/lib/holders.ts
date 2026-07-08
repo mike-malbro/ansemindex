@@ -3,7 +3,6 @@ import { cacheGet, cacheSet } from "./cache";
 const RPC_CANDIDATES = [
   process.env.SOLANA_RPC_URL,
   "https://solana-rpc.publicnode.com",
-  "https://rpc.ankr.com/solana",
   "https://api.mainnet-beta.solana.com",
 ].filter(Boolean) as string[];
 
@@ -31,7 +30,6 @@ type ParsedAccount = {
     parsed?: {
       info?: {
         owner?: string;
-        tokenAmount?: { uiAmount?: number; amount?: string };
       };
     };
   };
@@ -41,11 +39,13 @@ async function rpcOnce<T>(
   endpoint: string,
   method: string,
   params: unknown[],
+  timeoutMs = 8_000,
 ): Promise<T> {
   const res = await fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (!res.ok) throw new Error(`RPC HTTP ${res.status}`);
   const json = (await res.json()) as RpcEnvelope<T>;
@@ -67,15 +67,14 @@ async function rpc<T>(method: string, params: unknown[]): Promise<T> {
 }
 
 /**
- * Rank largest holders of a mint (token accounts → owners).
+ * Rank largest holders of a mint (token accounts → owners when available).
  * Not LP positions — Meteora datapi has no pool-LP list.
- * Label in UI as "Top token holders".
  */
 export async function rankTokenHolders(
   mint: string,
   opts?: { controllerWallets?: string[]; limit?: number },
 ): Promise<RankedHolder[]> {
-  const limit = opts?.limit ?? 20;
+  const limit = opts?.limit ?? 15;
   const controllers = new Set(
     (opts?.controllerWallets ?? []).map((w) => w.toLowerCase()),
   );
@@ -90,11 +89,17 @@ export async function rankTokenHolders(
   const accounts = (largest.value ?? []).slice(0, limit);
   if (accounts.length === 0) return [];
 
-  const multi = await rpc<{ value: ParsedAccount[] }>("getMultipleAccounts", [
-    accounts.map((a) => a.address),
-    { encoding: "jsonParsed" },
-  ]);
-  const infos = multi.value ?? [];
+  let infos: ParsedAccount[] = [];
+  try {
+    const multi = await rpc<{ value: ParsedAccount[] }>("getMultipleAccounts", [
+      accounts.map((a) => a.address),
+      { encoding: "jsonParsed" },
+    ]);
+    infos = multi.value ?? [];
+  } catch {
+    // Owner resolution is best-effort; still rank by token-account size.
+    infos = [];
+  }
 
   const topSum = accounts.reduce((s, a) => {
     const ui = a.uiAmount ?? Number(a.amount) / 10 ** a.decimals;
