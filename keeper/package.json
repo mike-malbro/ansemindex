@@ -1,0 +1,24 @@
+{
+  "name": "ansem-index-keeper",
+  "version": "0.1.0",
+  "description": "ANSEM Index keeper — claim Meteora DAMM v2 fees → buy ANSEM → send to creator fee wallet (Life-style, no burn)",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "once": "MANUAL=true node src/index.js",
+    "dry": "DRY_RUN=true MANUAL=true node src/index.js",
+    "doctor": "node src/doctor.js"
+  },
+  "dependencies": {
+    "@meteora-ag/cp-amm-sdk": "^1.4.4",
+    "@solana/spl-token": "^0.4.14",
+    "@solana/web3.js": "^1.98.4",
+    "bn.js": "^5.2.4",
+    "bs58": "^6.0.0",
+    "dotenv": "^17.4.2"
+  }
+}

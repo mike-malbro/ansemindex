@@ -1,0 +1,36 @@
+{
+  "cellId": "ansem-index",
+  "label": "ANSEM Index LP flywheel",
+  "ansemMint": "9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump",
+  "wallets": {
+    "main": "",
+    "lp": "HpJbzERP44V21mKGRDDUArb9JJaL9NdPSgXzZ9uyieVB",
+    "operator": "",
+    "ansemDest": ""
+  },
+  "feeSplit": {
+    "ansemSend": 0.7,
+    "reserve": 0.3,
+    "reinvest": 0
+  },
+  "routes": [
+    {
+      "id": "ansem_send",
+      "pct": 0.7,
+      "type": "jupiter_buy_send",
+      "mint": "9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump",
+      "note": "Buy ANSEM with claimed fees, send to creator fee wallet (NOT burn)"
+    },
+    {
+      "id": "reserve",
+      "pct": 0.3,
+      "type": "sol_reserve",
+      "note": "Keep SOL on operator for gas / future pool adds"
+    }
+  ],
+  "notes": [
+    "Mirror of LIFE cell-deploy: claim → sweep → buy → send (burn replaced by ANSEM transfer).",
+    "Add liquidity manually on app.meteora.ag with LP wallet (W1).",
+    "Set wallets.operator + wallets.ansemDest (or env) before go-live."
+  ]
+}

@@ -32,6 +32,15 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+!keeper/.env.example
+!keeper/cell_secrets.env.example
+
+# keeper secrets / local data
+keeper/cell_secrets.env
+keeper/secrets/
+keeper/data/*.json
+!keeper/data/.gitkeep
 
 # vercel
 .vercel

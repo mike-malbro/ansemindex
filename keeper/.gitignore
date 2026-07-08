@@ -1,0 +1,7 @@
+node_modules/
+.env
+cell_secrets.env
+secrets/
+data/*.json
+!data/.gitkeep
+.DS_Store

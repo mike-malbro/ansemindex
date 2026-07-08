@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ANSEM INDEX
 
-## Getting Started
+Independent Meteora DAMM v2 LP terminal + Life-style fee keeper for the ANSEM index.
 
-First, run the development server:
+**Fee flow (launch):** claim LP fees → sweep to operator → Jupiter buy ANSEM → **send to creator fee wallet** (not burn).
+
+## Two services (Railway)
+
+| Service | Path | Role | Keys |
+|---------|------|------|------|
+| **Hub** | repo root (Next.js) | Portfolio terminal + `/manage` | Pubkeys only |
+| **Keeper** | `keeper/` | Claim / buy / send loop | `LP_PRIVATE_KEY`, `OPERATOR_PRIVATE_KEY` |
+
+## Creator fee wallets
+
+| Wallet | Env | Signs |
+|--------|-----|-------|
+| W0 Main | `MAIN_WALLET` | Never |
+| W1 LP | `LP_WALLET` + `LP_PRIVATE_KEY` | `claimPositionFee2`, SOL sweep |
+| W2 Operator | `OPERATOR_WALLET` + `OPERATOR_PRIVATE_KEY` | Jupiter buy, SPL send |
+| ANSEM dest | `ANSEM_DEST_WALLET` | Receives bought ANSEM |
+
+Default tracked LP (view): `HpJbzERP44V21mKGRDDUArb9JJaL9NdPSgXzZ9uyieVB`  
+ANSEM mint: `9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump`
+
+Default split: **70% buy+send ANSEM**, **30% SOL reserve** (editable in `keeper/cell.json`).
+
+## Local — hub
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
+cp .env.example .env.local
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- Terminal: http://localhost:3000  
+- Manage: http://localhost:3000/manage  
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Local — keeper (dry)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+cd keeper
+cp .env.example .env
+# set OPERATOR_WALLET + ANSEM_DEST_WALLET (pubkeys)
+pnpm install
+pnpm doctor
+pnpm dry          # one dry tick — no signing
+pnpm start        # loop, still DRY_RUN until flipped
+```
 
-## Learn More
+## Add liquidity
 
-To learn more about Next.js, take a look at the following resources:
+1. Phantom → **W1 LP wallet**
+2. [app.meteora.ag](https://app.meteora.ag) → deposit TOKEN–ANSEM
+3. Positions show on the terminal automatically
+4. Keeper claims all open W1 positions each tick
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Go live
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. `pnpm doctor` clean  
+2. Several dry ticks OK  
+3. Fund W1 (~0.05 SOL) + W2 (enough for buys)  
+4. On keeper Railway: `DRY_RUN=false` `SIMULATION_MODE=false`  
+5. Hub: set `KEEPER_URL=https://your-keeper.up.railway.app` so `/manage` talks to it  
 
-## Deploy on Vercel
+## API
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Hub: `GET /api/health`, `GET /api/portfolio`, `GET /api/pool/[address]`, `GET|POST /api/keeper`
+- Keeper: `GET /health`, `GET /api/state`, `POST /api/tick`

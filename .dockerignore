@@ -1,0 +1,16 @@
+# Hub (Next.js) — Railway / Docker
+node_modules
+keeper/node_modules
+.next
+.git
+.env
+.env.local
+.env*.local
+keeper/.env
+keeper/cell_secrets.env
+keeper/secrets
+*.md
+!README.md
+AGENTS.md
+CLAUDE.md
+.DS_Store
