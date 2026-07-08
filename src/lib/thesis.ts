@@ -3,9 +3,9 @@
  * Public hub only — no keys. Paper before machinery.
  */
 
-export const WHITEPAPER_VERSION = "1.1";
+export const WHITEPAPER_VERSION = "1.2";
 export const WHITEPAPER_UPDATED_NOTE =
-  "This paper will update as we ship. Check the version badge.";
+  "This paper will update as we ship. v1.2 adds production databasing + collab.";
 
 export const ANSEM_TARGET_PCT = 0.7;
 export const BASE_FEE_PCT = 1;
@@ -20,6 +20,7 @@ export const PRINCIPLES = [
   "ANSEM creator fees buy index tokens by proportional share.",
   "Map wallets are how we discover pools — they are not the index.",
   "ANSEM nodes invest at their own will — copy the method, not the keys.",
+  "Production data is append-only: every fee claim, buy, send, and LP change gets a row.",
   "Rules can shift as data arrives — this paper will update.",
 ] as const;
 
@@ -92,6 +93,69 @@ export const EXPLAIN_LAUNCHPAD = {
     "No private keys on the public hub",
   ],
 } as const;
+
+export const EXPLAIN_DATA = {
+  title: "Production databasing & collaboration",
+  body: "Tonight’s hub has a minimum viable fee ledger — pool snapshots, index ANSEM %, keeper ticks, fee events, creator sends. That is not production. Production means an append-only event spine: every on-chain claim, swap, send, LP deposit/withdraw, and gate flip is a row with a tx signature (or an explicit dry/error status). Postgres is the system of record for dashboards; RPC is for enrichment and backfill. Keys never enter the DB or the public repo.",
+  bullets: [
+    "Append-only money events — corrections are new rows, not silent edits",
+    "Layers: chain txs → LP/fee events → 70% gate → launchpad/nodes → dash rollups",
+    "Hub reads/writes the public ledger; private keeper signs and POSTs ticks",
+    "GitHub: PRs for schema, Issues for fee-rule decisions, no keys in git",
+  ],
+} as const;
+
+export const DATA_LAYERS = [
+  {
+    id: "now",
+    label: "Now (v0)",
+    body: "pools, pool_snapshots, index_snapshots, keeper_ticks, fee_events, creator_fee_sends. Enough for Index / Creator / dry ticks — not full tx coverage.",
+  },
+  {
+    id: "spine",
+    label: "Event spine",
+    body: "chain_transactions + event_tx_links + wallet_balance_snapshots. Answer “every signature” without scraping Solscan by hand.",
+  },
+  {
+    id: "lp",
+    label: "LP & shares",
+    body: "lp_events (deposit/withdraw/claim) and share % history so composition charts are rebuildable.",
+  },
+  {
+    id: "gate",
+    label: "70% gate",
+    body: "gate_transitions + treasury_positions on the creator fee wallet. Accrual → claim → buy → send → flip to buybacks.",
+  },
+  {
+    id: "products",
+    label: "Launchpad & nodes",
+    body: "launches, node_registry, node_reports — pubkeys and public reports only.",
+  },
+  {
+    id: "dash",
+    label: "Dashboards",
+    body: "Materialized daily/hourly rollups. UI reads the ledger, not ad-hoc RPC on every paint.",
+  },
+] as const;
+
+export const COLLAB_RULES = [
+  {
+    title: "Public hub repo",
+    body: "mike-malbro/ansemindex — migrations, DATA.md, SECURITY.md, UI. Collaborators welcome. No signing keys in env committed to git.",
+  },
+  {
+    title: "Private keeper",
+    body: "Signing material lives only in keeper secrets (Railway/Fly). Keeper POSTs tick summaries to the hub persist API — prefer that over broad DB credentials on the keeper.",
+  },
+  {
+    title: "PRs & migrations",
+    body: "Schema changes ship as numbered migrations/*.sql in a PR. Never edit an already-applied migration — add the next file. Review: no keys, assertNoSecrets on new POSTs, IF NOT EXISTS.",
+  },
+  {
+    title: "Decisions",
+    body: "Fee-rule and table-shape decisions go in GitHub Issues (labels: data, fee-path, dashboard, security) so the whitepaper and DATA.md can cite them. Chat is fine; the ledger of decisions is Issues.",
+  },
+] as const;
 
 export const THESIS = {
   why: {
@@ -331,6 +395,7 @@ export const WHITEPAPER_NAV = [
   { id: "meteora", label: "Meteora" },
   { id: "pool", label: "Pools" },
   { id: "flywheel", label: "Fee chart" },
+  { id: "data", label: "Data" },
   { id: "launchpad", label: "Launchpad" },
   { id: "nodes", label: "Nodes" },
   { id: "howto", label: "How-to" },

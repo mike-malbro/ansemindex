@@ -4,6 +4,8 @@ Independent Meteora DAMM v2 LP terminal + Life-style fee keeper for the ANSEM in
 
 **Fee flow (launch):** claim LP fees → sweep to operator → Jupiter buy ANSEM → **send to creator fee wallet** (not burn).
 
+**Docs:** [DATA.md](./DATA.md) (production databasing + GitHub/collab) · [SECURITY.md](./SECURITY.md) · whitepaper `/whitepaper#data`
+
 ## Two services (Railway)
 
 | Service | Path | Role | Keys |

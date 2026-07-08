@@ -17,3 +17,8 @@ Forbidden on hub: any `*_PRIVATE_KEY`, `*_SECRET_KEY`, mnemonic, keypair JSON.
 ## Perpad parallel
 
 Perpad keeps treasury keys in Fly/Supabase **secrets**, never in the DB. We mirror that split for ANSEM Index.
+
+## Production data
+
+See [DATA.md](./DATA.md) for the full production schema roadmap (event spine,
+LP history, 70% gate, dashboards, GitHub/collab). Whitepaper: `/whitepaper#data`.

@@ -6,6 +6,9 @@ import { PoolDiagram } from "@/components/whitepaper/PoolDiagram";
 import {
   ANSEM_TARGET_PCT,
   BASE_FEE_PCT,
+  COLLAB_RULES,
+  DATA_LAYERS,
+  EXPLAIN_DATA,
   EXPLAIN_FEE_1PCT,
   EXPLAIN_INDEX,
   EXPLAIN_LAUNCHPAD,
@@ -27,7 +30,7 @@ import { WHITEPAPER_TITLE } from "@/lib/whitepaper";
 export const metadata = {
   title: `${WHITEPAPER_TITLE} v${WHITEPAPER_VERSION} · ANSEM INDEX`,
   description:
-    "v1.1: pool index, proportional shares, ANSEM creator fees, launchpad, nodes. No keys on the hub.",
+    "v1.2: pool index, fee flywheel, production databasing, GitHub collab. No keys on the hub.",
 };
 
 function Section({
@@ -225,6 +228,87 @@ export default function WhitepaperPage() {
               </li>
             ))}
           </ol>
+        </Section>
+
+        <Section id="data">
+          <h2 className="text-lg font-semibold">{EXPLAIN_DATA.title}</h2>
+          <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+            {EXPLAIN_DATA.body}
+          </p>
+          <ul className="mt-4 space-y-2">
+            {EXPLAIN_DATA.bullets.map((b) => (
+              <li
+                key={b}
+                className="text-xs text-zinc-500 before:mr-2 before:content-['·']"
+              >
+                {b}
+              </li>
+            ))}
+          </ul>
+
+          <h3 className="mt-8 text-sm font-semibold text-zinc-200">
+            Data layers
+          </h3>
+          <ol className="mt-4 space-y-3">
+            {DATA_LAYERS.map((layer, i) => (
+              <li
+                key={layer.id}
+                className="rounded border border-zinc-800 bg-zinc-900/40 px-4 py-3"
+              >
+                <div className="text-[10px] uppercase tracking-wider text-zinc-500">
+                  {i + 1}. {layer.label}
+                </div>
+                <p className="mt-1 text-xs leading-relaxed text-zinc-400">
+                  {layer.body}
+                </p>
+              </li>
+            ))}
+          </ol>
+
+          <h3 className="mt-8 text-sm font-semibold text-zinc-200">
+            GitHub & collab
+          </h3>
+          <ul className="mt-4 space-y-3">
+            {COLLAB_RULES.map((r) => (
+              <li
+                key={r.title}
+                className="border-l-2 border-zinc-700 pl-3"
+              >
+                <div className="text-xs font-semibold text-zinc-200">
+                  {r.title}
+                </div>
+                <p className="mt-1 text-[11px] leading-relaxed text-zinc-500">
+                  {r.body}
+                </p>
+              </li>
+            ))}
+          </ul>
+
+          <p className="mt-6 text-xs text-zinc-500">
+            Full schema contract:{" "}
+            <a
+              href="https://github.com/mike-malbro/ansemindex/blob/main/DATA.md"
+              className="text-sky-400 hover:underline"
+              target="_blank"
+              rel="noreferrer"
+            >
+              DATA.md on GitHub
+            </a>
+            . Security:{" "}
+            <a
+              href="https://github.com/mike-malbro/ansemindex/blob/main/SECURITY.md"
+              className="text-sky-400 hover:underline"
+              target="_blank"
+              rel="noreferrer"
+            >
+              SECURITY.md
+            </a>
+            . Live ledger:{" "}
+            <Link href="/book?tab=creator" className="text-sky-400 hover:underline">
+              Creator · 0→{pct}%
+            </Link>
+            .
+          </p>
         </Section>
 
         <Section id="launchpad">
