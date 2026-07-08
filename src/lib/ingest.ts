@@ -7,7 +7,12 @@ import {
   queryOne,
 } from "./db";
 import { enrichPositions } from "./dexscreener";
-import { getOpenPositions, positionValueUsd, unclaimedFeesUsd } from "./meteora";
+import {
+  claimedFeesUsd,
+  getOpenPositions,
+  positionValueUsd,
+  unclaimedFeesUsd,
+} from "./meteora";
 import type {
   EnrichedPosition,
   IndexPayload,
@@ -88,16 +93,17 @@ export async function ingestControllerWallet(
       await query(
         `INSERT INTO pool_snapshots (
            pool_id, controller_wallet, position_address,
-           position_value_usd, unclaimed_fees_usd,
+           position_value_usd, unclaimed_fees_usd, claimed_fees_usd,
            token_amount, ansem_amount, token_usd, ansem_usd,
            pool_tvl_usd, volume_24h_usd, price_change_24h, market_cap_usd, raw
-         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
         [
           poolRow.id,
           wallet,
           p.position_address,
           positionValueUsd(p),
           unclaimedFeesUsd(p),
+          claimedFeesUsd(p),
           amounts.token_amount,
           amounts.ansem_amount,
           amounts.token_usd,
@@ -200,6 +206,7 @@ export async function readIndexFromDb(): Promise<IndexPayload | null> {
        p.last_seen_at::text AS last_seen_at,
        COALESCE(s.position_value_usd, 0)::float8 AS position_value_usd,
        COALESCE(s.unclaimed_fees_usd, 0)::float8 AS unclaimed_fees_usd,
+       COALESCE(s.claimed_fees_usd, 0)::float8 AS claimed_fees_usd,
        COALESCE(s.token_amount, 0)::float8 AS token_amount,
        COALESCE(s.ansem_amount, 0)::float8 AS ansem_amount,
        COALESCE(s.token_usd, 0)::float8 AS token_usd,
@@ -238,6 +245,10 @@ export async function readIndexFromDb(): Promise<IndexPayload | null> {
     (s, p) => s + Number(p.unclaimed_fees_usd || 0),
     0,
   );
+  const total_claimed_fees_usd = pools.reduce(
+    (s, p) => s + Number(p.claimed_fees_usd || 0),
+    0,
+  );
 
   return {
     source: "db",
@@ -256,6 +267,8 @@ export async function readIndexFromDb(): Promise<IndexPayload | null> {
     total_pools: pools.length,
     total_position_usd,
     total_fees_usd,
+    total_claimed_fees_usd,
+    total_fees_earned_usd: total_fees_usd + total_claimed_fees_usd,
     pools,
   };
 }

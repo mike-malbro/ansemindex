@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SiteNav } from "@/components/SiteNav";
+import { HomeIndex } from "@/components/HomeIndex";
 import { FeeFlywheelChart } from "@/components/whitepaper/FeeFlywheelChart";
 import {
   ANSEM_TARGET_PCT,
@@ -11,9 +12,9 @@ import {
 } from "@/lib/thesis";
 
 export const metadata = {
-  title: "ANSEM INDEX · How-to guide",
+  title: "ANSEM INDEX · Live index",
   description:
-    "Creator fees buy tokens/ANSEM until 70% ANSEM, then all buybacks. DAMM v2 · 1% · run your own node.",
+    "wallet(0) TOKEN–ANSEM pools, live fees, and how-to. Creator treasury $0 until fees.",
 };
 
 export default function GuideHome() {
@@ -23,26 +24,38 @@ export default function GuideHome() {
 
       <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
         <p className="text-[10px] uppercase tracking-widest text-zinc-500">
-          Public guide · no keys on this hub
+          Public hub · no keys · live index
         </p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-          How to run the ANSEM Index
+          ANSEM Index
         </h1>
         <p className="mt-3 max-w-xl text-sm leading-relaxed text-zinc-400">
-          Creator fees buy tokens and ANSEM. Send and seed until ANSEM is{" "}
-          {(ANSEM_TARGET_PCT * 100).toFixed(0)}% of the program — then all
-          buybacks. DAMM v2 at {BASE_FEE_PCT}%. Copy the method, not the wallet.
+          The index is wallet(0)’s open TOKEN–ANSEM pools on Meteora. Fees shown
+          are real LP fees. Our creator-fee treasury stays $0 until we earn
+          creator fees. DAMM v2 at {BASE_FEE_PCT}% · flywheel to{" "}
+          {(ANSEM_TARGET_PCT * 100).toFixed(0)}% ANSEM.
         </p>
 
-        <Link
-          href="/whitepaper"
-          className="mt-6 inline-flex items-center gap-2 rounded border border-amber-800/50 bg-amber-950/20 px-4 py-2.5 text-sm text-amber-100/90 transition hover:border-amber-700/60"
-        >
-          Read whitepaper v{WHITEPAPER_VERSION} →
-        </Link>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link
+            href="#index"
+            className="inline-flex items-center rounded border border-amber-800/50 bg-amber-950/20 px-4 py-2.5 text-sm text-amber-100/90 transition hover:border-amber-700/60"
+          >
+            View index ↓
+          </Link>
+          <Link
+            href="/whitepaper"
+            className="inline-flex items-center rounded border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm text-zinc-200 transition hover:border-zinc-500"
+          >
+            Whitepaper v{WHITEPAPER_VERSION} →
+          </Link>
+        </div>
+
+        {/* Live index + fees */}
+        <HomeIndex />
 
         {/* Compact fee chart */}
-        <section id="fee-chart" className="mt-10">
+        <section id="fee-chart" className="mt-12">
           <h2 className="text-sm font-semibold text-zinc-200">Fee chart</h2>
           <p className="mt-1 text-[11px] text-zinc-500">
             Build to {(ANSEM_TARGET_PCT * 100).toFixed(0)}% ANSEM, then all
@@ -59,12 +72,9 @@ export default function GuideHome() {
           </Link>
         </section>
 
-        {/* How-to index */}
+        {/* How-to */}
         <section className="mt-12">
           <h2 className="text-lg font-semibold">How-to</h2>
-          <p className="mt-1 text-xs text-zinc-500">
-            Short index into the paper. Public hub never asks for private keys.
-          </p>
           <ol className="mt-6 space-y-3">
             {HOW_TO_GUIDE.map((step) => (
               <li
@@ -125,7 +135,6 @@ export default function GuideHome() {
           </div>
         </section>
 
-        {/* Principles */}
         <section className="mt-12 mb-16">
           <h2 className="text-lg font-semibold">Principles</h2>
           <ul className="mt-4 space-y-2">

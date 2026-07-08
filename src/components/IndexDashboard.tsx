@@ -176,9 +176,15 @@ export function IndexDashboard() {
               sub="controller LP value"
             />
             <Stat
-              label="Unclaimed fees"
-              value={fmtMoney(data.total_fees_usd)}
+              label="Fees earned"
+              value={fmtMoney(data.total_fees_earned_usd)}
+              sub={`${fmtMoney(data.total_claimed_fees_usd)} claimed`}
               valueClass="text-amber-300"
+            />
+            <Stat
+              label="Unclaimed"
+              value={fmtMoney(data.total_fees_usd)}
+              valueClass="text-amber-200/90"
             />
             <Stat
               label="Our treasury"
@@ -220,7 +226,10 @@ export function IndexDashboard() {
                     Amount
                   </th>
                   <th className="px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-zinc-500">
-                    Fees
+                    Unclaimed
+                  </th>
+                  <th className="px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-zinc-500">
+                    Claimed
                   </th>
                   <th className="px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-zinc-500">
                     24h
@@ -261,6 +270,9 @@ export function IndexDashboard() {
                       </td>
                       <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-amber-300/90">
                         {fmtMoney(p.unclaimed_fees_usd)}
+                      </td>
+                      <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-zinc-300">
+                        {fmtMoney(p.claimed_fees_usd)}
                       </td>
                       <td
                         className={`px-3 py-2.5 text-right font-mono text-sm tabular-nums ${pnlClass(p.price_change_24h)}`}

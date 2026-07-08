@@ -184,6 +184,7 @@ export type IndexPoolRow = {
   last_seen_at: string;
   position_value_usd: number;
   unclaimed_fees_usd: number;
+  claimed_fees_usd: number;
   token_amount: number;
   ansem_amount: number;
   token_usd: number;
@@ -206,6 +207,11 @@ export type IndexPayload = {
   ingested_at: string | null;
   total_pools: number;
   total_position_usd: number;
+  /** Unclaimed LP fees on wallet(0) positions */
   total_fees_usd: number;
+  /** Already-claimed LP fees (lifetime on open positions) */
+  total_claimed_fees_usd: number;
+  /** unclaimed + claimed */
+  total_fees_earned_usd: number;
   pools: IndexPoolRow[];
 };

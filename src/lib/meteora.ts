@@ -119,3 +119,9 @@ export function unclaimedFeesUsd(p: OpenPosition): number {
   if (!f) return 0;
   return (f.amount_x_usd ?? 0) + (f.amount_y_usd ?? 0);
 }
+
+export function claimedFeesUsd(p: OpenPosition): number {
+  const f = p.total_claimed_fees;
+  if (!f) return 0;
+  return (f.amount_x_usd ?? 0) + (f.amount_y_usd ?? 0);
+}
