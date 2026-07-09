@@ -4,26 +4,15 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { EnrichedPosition, PortfolioPayload } from "@/lib/types";
 import {
   fmtMoney,
+  fmtPct,
   meteoraPoolUrl,
+  pnlClass,
   shortCa,
   solscanAccount,
 } from "@/lib/format";
 import { looksLikeSecret, isLikelyPubkey } from "@/lib/security";
-import { PieChart, consolidateSlices } from "./PieChart";
 
-type HolderPayload = {
-  wallet: string;
-  holdings: {
-    mint: string;
-    symbol: string;
-    amountUi: number;
-    valueUsd: number | null;
-    priceUsd: number | null;
-  }[];
-  pie: { id: string; label: string; value: number }[];
-  note?: string;
-  fetched_at: string;
-};
+type SortKey = "fees" | "value" | "ticker" | "change24h";
 
 function setWalletParam(wallet: string | null) {
   const url = new URL(window.location.href);
@@ -33,14 +22,19 @@ function setWalletParam(wallet: string | null) {
   window.history.replaceState({}, "", url.toString());
 }
 
-/** Paste a pubkey — see your portfolio against the index. No keys. */
+/**
+ * Wallet tab — same simple board + table as Index.
+ * Total amount up top; pools broken down; sort by fees.
+ */
 export function WalletLookup() {
   const [input, setInput] = useState("");
   const [wallet, setWallet] = useState<string | null>(null);
-  const [holder, setHolder] = useState<HolderPayload | null>(null);
   const [portfolio, setPortfolio] = useState<PortfolioPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [query, setQuery] = useState("");
+  const [sortKey, setSortKey] = useState<SortKey>("fees");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const lookup = useCallback(async (raw: string) => {
     const trimmed = raw.trim();
@@ -49,11 +43,11 @@ export function WalletLookup() {
       return;
     }
     if (looksLikeSecret(trimmed)) {
-      setError("Never paste private keys, seeds, or mnemonics here — pubkey only.");
+      setError("Never paste private keys — pubkey only.");
       return;
     }
     if (!isLikelyPubkey(trimmed)) {
-      setError("That doesn’t look like a Solana pubkey. Check the address.");
+      setError("That doesn’t look like a Solana pubkey.");
       return;
     }
 
@@ -63,31 +57,16 @@ export function WalletLookup() {
     setWalletParam(trimmed);
 
     try {
-      const [hRes, pRes] = await Promise.all([
-        fetch(`/api/holder/${encodeURIComponent(trimmed)}`, {
-          cache: "no-store",
-        }),
-        fetch(`/api/portfolio?wallet=${encodeURIComponent(trimmed)}`, {
-          cache: "no-store",
-        }),
-      ]);
-
-      const hBody = await hRes.json().catch(() => ({}));
-      const pBody = await pRes.json().catch(() => ({}));
-
-      if (!hRes.ok) {
-        throw new Error(hBody.error || `Holder lookup failed (${hRes.status})`);
+      const res = await fetch(
+        `/api/portfolio?wallet=${encodeURIComponent(trimmed)}`,
+        { cache: "no-store" },
+      );
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(body.error || `Lookup failed (${res.status})`);
       }
-      if (!pRes.ok) {
-        throw new Error(
-          pBody.error || `Portfolio lookup failed (${pRes.status})`,
-        );
-      }
-
-      setHolder(hBody as HolderPayload);
-      setPortfolio(pBody as PortfolioPayload);
+      setPortfolio(body as PortfolioPayload);
     } catch (e) {
-      setHolder(null);
       setPortfolio(null);
       setError(e instanceof Error ? e.message : "Lookup failed");
     } finally {
@@ -104,29 +83,48 @@ export function WalletLookup() {
     }
   }, [lookup]);
 
-  const pie = useMemo(() => {
-    if (!holder?.pie?.length) return [];
-    return consolidateSlices(
-      holder.pie.map((s) => ({
-        id: s.id,
-        label: s.label,
-        value: s.value,
-      })),
-      { maxSlices: 10, minPct: 1.2 },
-    );
-  }, [holder]);
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("desc");
+    }
+  }
 
-  const holdings = useMemo(() => {
-    if (!holder) return [];
-    return [...holder.holdings]
-      .filter((h) => h.amountUi > 0)
-      .sort(
-        (a, b) =>
-          (b.valueUsd ?? 0) - (a.valueUsd ?? 0) || b.amountUi - a.amountUi,
+  const pools = useMemo(() => {
+    if (!portfolio) return [];
+    let rows = [...portfolio.positions];
+    const q = query.trim().toLowerCase();
+    if (q) {
+      rows = rows.filter(
+        (p) =>
+          p.ticker.toLowerCase().includes(q) ||
+          p.pool_name.toLowerCase().includes(q) ||
+          p.pool_address.toLowerCase().includes(q),
       );
-  }, [holder]);
+    }
+    const dir = sortDir === "asc" ? 1 : -1;
+    rows.sort((a, b) => {
+      switch (sortKey) {
+        case "ticker":
+          return dir * a.ticker.localeCompare(b.ticker);
+        case "value":
+          return dir * (a.position_value_usd - b.position_value_usd);
+        case "change24h":
+          return (
+            dir * ((a.price_change_24h ?? 0) - (b.price_change_24h ?? 0))
+          );
+        case "fees":
+        default:
+          return dir * (a.unclaimed_fees_usd - b.unclaimed_fees_usd);
+      }
+    });
+    return rows;
+  }, [portfolio, query, sortKey, sortDir]);
 
-  const positions: EnrichedPosition[] = portfolio?.positions ?? [];
+  const totalValue = portfolio?.totals.balances ?? 0;
+  const totalFees = portfolio?.totals.unclaimed_fees ?? 0;
 
   return (
     <div className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 px-4 py-4 sm:px-6">
@@ -136,8 +134,8 @@ export function WalletLookup() {
             Wallet
           </h1>
           <p className="mt-1 max-w-xl font-mono text-[11px] text-zinc-500">
-            Paste a pubkey. See portfolio vs the index — holdings + open
-            TOKEN–ANSEM LPs. Pubkeys only — never keys.
+            Paste a pubkey. Total amount, then pools — sort by fees. Same board
+            as Index. Pubkeys only.
           </p>
         </div>
         <button
@@ -181,191 +179,205 @@ export function WalletLookup() {
         </div>
       )}
 
-      {wallet && !loading && !error && holder && portfolio && (
-        <>
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <p className="font-mono text-xs text-zinc-400">
-              <a
-                href={solscanAccount(wallet)}
-                target="_blank"
-                rel="noreferrer"
-                className="text-sky-400 hover:underline"
-              >
-                {shortCa(wallet, 6, 6)}
-              </a>
-            </p>
-            <p className="font-mono text-[10px] text-zinc-600">
-              {holder.note}
-            </p>
-          </div>
+      {loading && !portfolio && (
+        <p className="py-16 text-center font-mono text-sm text-zinc-500">
+          Loading pools…
+        </p>
+      )}
 
+      {wallet && portfolio && (
+        <>
+          <p className="font-mono text-xs text-zinc-500">
+            <a
+              href={solscanAccount(wallet)}
+              target="_blank"
+              rel="noreferrer"
+              className="text-emerald-400 hover:underline"
+            >
+              {shortCa(wallet, 6, 6)}
+            </a>
+          </p>
+
+          {/* Simple board — totals first */}
           <section className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <Stat label="Total amount" value={fmtMoney(totalValue)} />
             <Stat
-              label="Index tokens"
-              value={String(holdings.length)}
+              label="Unclaimed fees"
+              value={fmtMoney(totalFees)}
+              valueClass="text-emerald-300"
             />
+            <Stat label="Pools" value={String(portfolio.total_pools)} />
             <Stat
-              label="Holdings (est.)"
-              value={fmtMoney(
-                holdings.reduce((s, h) => s + (h.valueUsd ?? 0), 0),
-              )}
-            />
-            <Stat
-              label="Open LPs"
+              label="Positions"
               value={String(portfolio.total_positions)}
             />
-            <Stat
-              label="LP value"
-              value={fmtMoney(portfolio.totals.balances)}
-              sub={`${fmtMoney(portfolio.totals.unclaimed_fees)} fees`}
-            />
           </section>
 
-          <section className="grid gap-4 rounded border border-zinc-800 bg-zinc-900/30 p-4 lg:grid-cols-2">
-            <PieChart
-              title="Index allocation"
-              slices={pie}
-              size={180}
+          <div className="flex flex-wrap items-center gap-3">
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Filter ticker / pool…"
+              className="w-full max-w-sm rounded border border-zinc-800 bg-zinc-900 px-3 py-2 font-mono text-xs text-zinc-100 placeholder:text-zinc-600 focus:border-zinc-600 focus:outline-none"
             />
-            <div className="overflow-x-auto">
-              <h2 className="mb-2 font-mono text-[10px] uppercase tracking-wider text-zinc-500">
-                Holdings
-              </h2>
-              {holdings.length === 0 ? (
-                <p className="font-mono text-xs text-zinc-500">
-                  No index-token balances found for this wallet.
-                </p>
-              ) : (
-                <table className="w-full border-collapse text-left">
-                  <thead>
-                    <tr className="border-b border-zinc-800">
-                      <th className="py-1.5 font-mono text-[10px] uppercase text-zinc-500">
-                        Token
-                      </th>
-                      <th className="py-1.5 text-right font-mono text-[10px] uppercase text-zinc-500">
-                        Amount
-                      </th>
-                      <th className="py-1.5 text-right font-mono text-[10px] uppercase text-zinc-500">
-                        Est. USD
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {holdings.map((h) => (
-                      <tr
-                        key={h.mint}
-                        className="border-b border-zinc-800/60"
-                      >
-                        <td className="py-1.5 font-mono text-xs text-zinc-200">
-                          {h.symbol}
-                        </td>
-                        <td className="py-1.5 text-right font-mono text-xs text-zinc-400">
-                          {h.amountUi.toLocaleString(undefined, {
-                            maximumFractionDigits: 4,
-                          })}
-                        </td>
-                        <td className="py-1.5 text-right font-mono text-xs text-zinc-300">
-                          {h.valueUsd != null ? fmtMoney(h.valueUsd) : "—"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
+            <span className="font-mono text-[11px] text-zinc-500">
+              {pools.length} pools
+            </span>
+          </div>
+
+          {pools.length === 0 ? (
+            <p className="py-8 font-mono text-xs text-zinc-500">
+              No open TOKEN–ANSEM pools on this wallet.
+            </p>
+          ) : (
+            <div className="overflow-x-auto rounded border border-zinc-800">
+              <table className="w-full min-w-[720px] border-collapse text-left">
+                <thead className="bg-zinc-900/80">
+                  <tr className="border-b border-zinc-800">
+                    <th className="px-3 py-2 font-mono text-[10px] uppercase text-zinc-500">
+                      #
+                    </th>
+                    <th className="px-3 py-2">
+                      <SortBtn
+                        label="Pool"
+                        active={sortKey === "ticker"}
+                        dir={sortDir}
+                        onClick={() => toggleSort("ticker")}
+                        align="left"
+                      />
+                    </th>
+                    <th className="px-3 py-2 text-right">
+                      <SortBtn
+                        label="Amount"
+                        active={sortKey === "value"}
+                        dir={sortDir}
+                        onClick={() => toggleSort("value")}
+                      />
+                    </th>
+                    <th className="px-3 py-2 text-right">
+                      <SortBtn
+                        label="Fees"
+                        active={sortKey === "fees"}
+                        dir={sortDir}
+                        onClick={() => toggleSort("fees")}
+                      />
+                    </th>
+                    <th className="px-3 py-2 text-right">
+                      <SortBtn
+                        label="24h"
+                        active={sortKey === "change24h"}
+                        dir={sortDir}
+                        onClick={() => toggleSort("change24h")}
+                      />
+                    </th>
+                    <th className="px-3 py-2 font-mono text-[10px] uppercase text-zinc-500">
+                      Links
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pools.map((p, i) => (
+                    <PoolRow key={p.position_address} p={p} rank={i + 1} />
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </section>
-
-          <section>
-            <h2 className="mb-2 font-mono text-sm font-semibold text-zinc-200">
-              Open DAMM positions
-            </h2>
-            {positions.length === 0 ? (
-              <p className="font-mono text-xs text-zinc-500">
-                No open Meteora DAMM positions on this wallet.
-              </p>
-            ) : (
-              <div className="overflow-x-auto rounded border border-zinc-800">
-                <table className="w-full min-w-[640px] border-collapse text-left">
-                  <thead className="bg-zinc-900/80">
-                    <tr className="border-b border-zinc-800">
-                      <th className="px-3 py-2 font-mono text-[10px] uppercase text-zinc-500">
-                        Pool
-                      </th>
-                      <th className="px-3 py-2 text-right font-mono text-[10px] uppercase text-zinc-500">
-                        Value
-                      </th>
-                      <th className="px-3 py-2 text-right font-mono text-[10px] uppercase text-zinc-500">
-                        Unclaimed
-                      </th>
-                      <th className="px-3 py-2 text-right font-mono text-[10px] uppercase text-zinc-500">
-                        Link
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {positions.map((p) => (
-                      <tr
-                        key={p.position_address}
-                        className="border-b border-zinc-800/60"
-                      >
-                        <td className="px-3 py-2 font-mono text-xs text-zinc-200">
-                          {p.ticker || p.pool_name}
-                        </td>
-                        <td className="px-3 py-2 text-right font-mono text-xs text-zinc-300">
-                          {fmtMoney(p.position_value_usd)}
-                        </td>
-                        <td className="px-3 py-2 text-right font-mono text-xs text-emerald-300/90">
-                          {fmtMoney(p.unclaimed_fees_usd)}
-                        </td>
-                        <td className="px-3 py-2 text-right font-mono text-[11px]">
-                          <a
-                            href={meteoraPoolUrl(p.pool_address)}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-sky-400 hover:underline"
-                          >
-                            Meteora
-                          </a>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
+          )}
         </>
       )}
 
       {!wallet && !loading && !error && (
         <p className="py-10 text-center font-mono text-xs text-zinc-600">
-          Paste a pubkey above to see the portfolio index.
+          Paste a pubkey to see total amount and pools.
         </p>
       )}
     </div>
   );
 }
 
+function PoolRow({ p, rank }: { p: EnrichedPosition; rank: number }) {
+  return (
+    <tr className="border-b border-zinc-800/80 hover:bg-zinc-900/70">
+      <td className="px-3 py-2.5 font-mono text-xs text-zinc-600">{rank}</td>
+      <td className="px-3 py-2.5">
+        <div className="font-mono text-sm text-zinc-100">
+          {p.ticker || p.pool_name}
+        </div>
+        <div className="font-mono text-[10px] text-zinc-600">
+          {shortCa(p.pool_address, 4, 4)}
+        </div>
+      </td>
+      <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-zinc-100">
+        {fmtMoney(p.position_value_usd)}
+      </td>
+      <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-emerald-300/90">
+        {fmtMoney(p.unclaimed_fees_usd)}
+      </td>
+      <td
+        className={`px-3 py-2.5 text-right font-mono text-sm tabular-nums ${pnlClass(p.price_change_24h)}`}
+      >
+        {p.price_change_24h != null ? fmtPct(p.price_change_24h) : "—"}
+      </td>
+      <td className="px-3 py-2.5 font-mono text-[11px]">
+        <a
+          href={meteoraPoolUrl(p.pool_address)}
+          target="_blank"
+          rel="noreferrer"
+          className="text-emerald-400 hover:underline"
+        >
+          Meteora
+        </a>
+      </td>
+    </tr>
+  );
+}
+
+function SortBtn({
+  label,
+  active,
+  dir,
+  onClick,
+  align = "right",
+}: {
+  label: string;
+  active: boolean;
+  dir: "asc" | "desc";
+  onClick: () => void;
+  align?: "left" | "right";
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider transition hover:text-zinc-200 ${
+        active ? "text-zinc-200" : "text-zinc-500"
+      } ${align === "right" ? "w-full justify-end" : ""}`}
+    >
+      {label}
+      {active && <span>{dir === "asc" ? "↑" : "↓"}</span>}
+    </button>
+  );
+}
+
 function Stat({
   label,
   value,
-  sub,
+  valueClass,
 }: {
   label: string;
   value: string;
-  sub?: string;
+  valueClass?: string;
 }) {
   return (
     <div className="rounded border border-zinc-800 bg-zinc-900/40 px-3 py-2.5">
       <div className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">
         {label}
       </div>
-      <div className="mt-1 font-mono text-sm font-semibold text-zinc-100">
+      <div
+        className={`mt-1 font-mono text-sm font-semibold ${valueClass ?? "text-zinc-100"}`}
+      >
         {value}
       </div>
-      {sub && (
-        <div className="mt-0.5 font-mono text-[10px] text-zinc-600">{sub}</div>
-      )}
     </div>
   );
 }
