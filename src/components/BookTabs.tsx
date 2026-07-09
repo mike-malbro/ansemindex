@@ -10,7 +10,7 @@ export type BookTab = "index" | "creator" | "wallet";
 
 const TABS: { id: BookTab; label: string; hint: string }[] = [
   { id: "index", label: "Index", hint: "Pool book" },
-  { id: "creator", label: "Creator fees", hint: "$AI → ANSEM" },
+  { id: "creator", label: "Creator", hint: "Fee wallet" },
   { id: "wallet", label: "Wallet", hint: "Paste & look up" },
 ];
 
@@ -68,7 +68,7 @@ function BookTabsInner() {
                 onClick={() => selectTab(t.id)}
                 className={`flex min-w-[5.5rem] flex-1 flex-col items-start rounded-md px-3 py-2.5 text-left transition sm:flex-none sm:min-w-[9rem] ${
                   active
-                    ? "bg-emerald-500 text-zinc-950"
+                    ? "bg-zinc-100 text-zinc-950"
                     : "bg-zinc-900/80 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
                 }`}
               >
@@ -77,7 +77,7 @@ function BookTabsInner() {
                 </span>
                 <span
                   className={`mt-0.5 font-mono text-[10px] ${
-                    active ? "text-zinc-800" : "text-zinc-600"
+                    active ? "text-zinc-600" : "text-zinc-600"
                   }`}
                 >
                   {t.hint}

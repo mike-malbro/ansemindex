@@ -1,5 +1,5 @@
 import type { PortfolioPayload } from "@/lib/types";
-import { fmtMoney, fmtPct, pnlClass, shortCa } from "@/lib/format";
+import { fmtMoney, shortCa } from "@/lib/format";
 
 function Stat({
   label,
@@ -31,6 +31,7 @@ function Stat({
 
 export function PortfolioHeader({ data }: { data: PortfolioPayload }) {
   const t = data.totals;
+  const f = data.fee_totals;
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -47,25 +48,31 @@ export function PortfolioHeader({ data }: { data: PortfolioPayload }) {
       </div>
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-        <Stat label="Balances" value={fmtMoney(t.balances)} sub={`${t.balances_sol?.toFixed(2)} SOL`} />
         <Stat
-          label="Unclaimed fees"
-          value={fmtMoney(t.unclaimed_fees)}
-          sub={`${t.unclaimed_fees_sol?.toFixed(4)} SOL`}
+          label="Balances"
+          value={fmtMoney(t.balances)}
+          sub={`${t.balances_sol?.toFixed(2)} SOL`}
+        />
+        <Stat
+          label="All-time generated"
+          value={fmtMoney(f?.generated_usd ?? 0)}
           valueClass="text-emerald-300"
+          sub={`${f?.compound_pct ?? 90}/${f?.claim_pct ?? 10} split`}
         />
         <Stat
-          label="Total deposits"
-          value={fmtMoney(t.total_deposits)}
-          sub={`${t.total_deposits_sol?.toFixed(2)} SOL`}
+          label="All-time claimed"
+          value={fmtMoney(f?.claimed_usd ?? 0)}
+          sub={`${f?.claim_pct ?? 10}% quote`}
         />
         <Stat
-          label="PnL"
-          value={fmtMoney(t.pnl)}
-          sub={fmtPct(t.pnl_pct_change)}
-          valueClass={pnlClass(t.pnl)}
+          label="Compounded"
+          value={fmtMoney(f?.compounded_usd ?? 0)}
+          sub={`${f?.compound_pct ?? 90}% into LP`}
         />
-        <Stat label="Positions" value={String(data.total_positions)} />
+        <Stat
+          label="Unclaimed"
+          value={fmtMoney(f?.unclaimed_usd ?? t.unclaimed_fees)}
+        />
         <Stat label="Pools" value={String(data.total_pools)} />
       </div>
     </section>

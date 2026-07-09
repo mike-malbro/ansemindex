@@ -112,9 +112,7 @@ export function CreatorBook({ embedded = false }: { embedded?: boolean }) {
     const slices: PieSlice[] = creatorPools.map((p) => ({
       id: `fee-${p.pool_address}`,
       label: p.token_symbol,
-      value:
-        (Number(p.unclaimed_fees_usd) || 0) +
-        (Number(p.claimed_fees_usd) || 0),
+      value: Number(p.fees_generated_usd) || 0,
     }));
     return consolidateSlices(slices, { maxSlices: 10, minPct: 1.2 });
   }, [creatorPools]);
@@ -175,10 +173,10 @@ export function CreatorBook({ embedded = false }: { embedded?: boolean }) {
               value={fmtMoney(data.total_position_usd)}
             />
             <Stat
-              label="Fees earned"
-              value={fmtMoney(data.total_fees_earned_usd)}
+              label="All-time generated"
+              value={fmtMoney(data.total_fees_generated_usd)}
               valueClass="text-emerald-300"
-              sub={`${fmtMoney(data.total_claimed_fees_usd)} claimed`}
+              sub={`${fmtMoney(data.total_claimed_fees_usd)} claimed · ${fmtMoney(data.total_compounded_fees_usd)} compounded`}
             />
             <Stat
               label={`$${token} treasury`}
@@ -205,7 +203,7 @@ export function CreatorBook({ embedded = false }: { embedded?: boolean }) {
                     Amount
                   </th>
                   <th className="px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-zinc-500">
-                    Fees earned
+                    Generated
                   </th>
                   <th className="px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-zinc-500">
                     Unclaimed
@@ -346,10 +344,16 @@ export function CreatorBook({ embedded = false }: { embedded?: boolean }) {
                           Amount
                         </th>
                         <th className="px-3 py-2 text-right font-mono text-[10px] uppercase text-zinc-500">
-                          Unclaimed
+                          Generated
                         </th>
                         <th className="px-3 py-2 text-right font-mono text-[10px] uppercase text-zinc-500">
                           Claimed
+                        </th>
+                        <th className="px-3 py-2 text-right font-mono text-[10px] uppercase text-zinc-500">
+                          Compounded
+                        </th>
+                        <th className="px-3 py-2 text-right font-mono text-[10px] uppercase text-zinc-500">
+                          Unclaimed
                         </th>
                         <th className="px-3 py-2 text-right font-mono text-[10px] uppercase text-zinc-500">
                           24h
@@ -389,10 +393,16 @@ export function CreatorBook({ embedded = false }: { embedded?: boolean }) {
                               {fmtMoney(p.position_value_usd)}
                             </td>
                             <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-emerald-300/90">
-                              {fmtMoney(p.unclaimed_fees_usd)}
+                              {fmtMoney(p.fees_generated_usd)}
                             </td>
                             <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-zinc-300">
                               {fmtMoney(p.claimed_fees_usd)}
+                            </td>
+                            <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-zinc-400">
+                              {fmtMoney(p.compounded_fees_usd)}
+                            </td>
+                            <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-zinc-300">
+                              {fmtMoney(p.unclaimed_fees_usd)}
                             </td>
                             <td
                               className={`px-3 py-2.5 text-right font-mono text-sm tabular-nums ${pnlClass(p.price_change_24h)}`}

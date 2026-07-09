@@ -147,6 +147,15 @@ export type VolumeHistoryResponse = {
 export type EnrichedPosition = OpenPosition & {
   position_value_usd: number;
   unclaimed_fees_usd: number;
+  /** All-time claimed (quote / claimable slice from Meteora). */
+  claimed_fees_usd: number;
+  /**
+   * Estimated fees auto-compounded into LP (90% on compounding pools).
+   * Backed out from claimable ÷ claim share.
+   */
+  compounded_fees_usd: number;
+  /** All-time LP fees generated = claimable + compounded. */
+  fees_generated_usd: number;
   constituent_token: TokenInfo;
   ansem_token: TokenInfo;
   ticker: string;
@@ -160,6 +169,15 @@ export type EnrichedPosition = OpenPosition & {
   price_change_24h?: number;
 };
 
+export type PortfolioFeeTotals = {
+  unclaimed_usd: number;
+  claimed_usd: number;
+  compounded_usd: number;
+  generated_usd: number;
+  compound_pct: number;
+  claim_pct: number;
+};
+
 export type PortfolioPayload = {
   wallet: string;
   ansem_mint: string;
@@ -168,6 +186,8 @@ export type PortfolioPayload = {
   total_pools: number;
   sol_price: number;
   totals: PortfolioTotals;
+  /** All-time fee tracking (90% compound / 10% claim in quote). */
+  fee_totals: PortfolioFeeTotals;
   positions: EnrichedPosition[];
 };
 
@@ -185,12 +205,19 @@ export type IndexPoolRow = {
   position_value_usd: number;
   unclaimed_fees_usd: number;
   claimed_fees_usd: number;
+  /** Estimated 90% auto-compounded into LP. */
+  compounded_fees_usd: number;
+  /** All-time generated = claimable + compounded. */
+  fees_generated_usd: number;
   token_amount: number;
   ansem_amount: number;
   token_usd: number;
   ansem_usd: number;
   pool_tvl_usd: number | null;
   volume_24h_usd: number | null;
+  price_change_5m: number | null;
+  price_change_1h: number | null;
+  price_change_6h: number | null;
   price_change_24h: number | null;
   market_cap_usd: number | null;
   position_address: string | null;
@@ -233,6 +260,11 @@ export type IndexPayload = {
   total_position_usd: number;
   total_fees_usd: number;
   total_claimed_fees_usd: number;
+  /** Claimable only (unclaimed + claimed) — understates 90/10 pools. */
   total_fees_earned_usd: number;
+  /** Estimated all-time compounded (90% slice). */
+  total_compounded_fees_usd: number;
+  /** All-time generated = claimable + compounded. */
+  total_fees_generated_usd: number;
   pools: IndexPoolRow[];
 };

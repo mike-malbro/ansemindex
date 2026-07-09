@@ -139,9 +139,9 @@ export function IndexDashboard() {
               value={fmtMoney(data.total_position_usd)}
             />
             <Stat
-              label="Fees earned"
-              value={fmtMoney(data.total_fees_earned_usd)}
-              sub={`${fmtMoney(data.total_claimed_fees_usd)} claimed`}
+              label="All-time generated"
+              value={fmtMoney(data.total_fees_generated_usd)}
+              sub={`${fmtMoney(data.total_claimed_fees_usd)} claimed · ${fmtMoney(data.total_compounded_fees_usd)} compounded`}
               valueClass="text-emerald-300"
             />
             <Stat
@@ -188,10 +188,16 @@ export function IndexDashboard() {
                     Amount
                   </th>
                   <th className="px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-zinc-500">
-                    Unclaimed
+                    Generated
                   </th>
                   <th className="px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-zinc-500">
                     Claimed
+                  </th>
+                  <th className="px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-zinc-500">
+                    Compounded
+                  </th>
+                  <th className="px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-zinc-500">
+                    Unclaimed
                   </th>
                   <th className="px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-zinc-500">
                     24h
@@ -233,10 +239,16 @@ export function IndexDashboard() {
                         {fmtMoney(p.position_value_usd)}
                       </td>
                       <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-emerald-300/90">
-                        {fmtMoney(p.unclaimed_fees_usd)}
+                        {fmtMoney(p.fees_generated_usd)}
                       </td>
                       <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-zinc-300">
                         {fmtMoney(p.claimed_fees_usd)}
+                      </td>
+                      <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-zinc-400">
+                        {fmtMoney(p.compounded_fees_usd)}
+                      </td>
+                      <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-zinc-300">
+                        {fmtMoney(p.unclaimed_fees_usd)}
                       </td>
                       <td
                         className={`px-3 py-2.5 text-right font-mono text-sm tabular-nums ${pnlClass(p.price_change_24h)}`}

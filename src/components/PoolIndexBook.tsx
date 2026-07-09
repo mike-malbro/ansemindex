@@ -3,10 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { IndexPayload, IndexPoolRow } from "@/lib/types";
 import {
+  changeTone,
   fmtMoney,
-  fmtPct,
+  fmtPctShort,
   meteoraPoolUrl,
-  pnlClass,
   shortCa,
   solscanAccount,
   solscanToken,
@@ -15,6 +15,31 @@ import { REFRESH_INTERVAL_MS } from "@/lib/config";
 import { PieChart, consolidateSlices, type PieSlice } from "./PieChart";
 import { HolderPanel } from "./HolderPanel";
 
+type Horizon = "5m" | "1h" | "6h" | "24h";
+type SortKey =
+  | "share"
+  | "amount"
+  | "generated"
+  | "claimed"
+  | "compounded"
+  | "unclaimed"
+  | Horizon;
+
+const HORIZONS: Horizon[] = ["5m", "1h", "6h", "24h"];
+
+function changeFor(p: IndexPoolRow, h: Horizon): number | null {
+  switch (h) {
+    case "5m":
+      return p.price_change_5m;
+    case "1h":
+      return p.price_change_1h;
+    case "6h":
+      return p.price_change_6h;
+    case "24h":
+      return p.price_change_24h;
+  }
+}
+
 /** Pools-first index book — auto-merged from all map wallets. */
 export function PoolIndexBook({ embedded = false }: { embedded?: boolean }) {
   const [data, setData] = useState<IndexPayload | null>(null);
@@ -22,6 +47,8 @@ export function PoolIndexBook({ embedded = false }: { embedded?: boolean }) {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<IndexPoolRow | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>("24h");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const load = useCallback(async (refresh = false) => {
     try {
@@ -58,18 +85,63 @@ export function PoolIndexBook({ embedded = false }: { embedded?: boolean }) {
     if (row) setSelected(row);
   }, [data]);
 
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("desc");
+    }
+  }
+
   const pools = useMemo(() => {
     if (!data) return [];
     const q = query.trim().toLowerCase();
-    if (!q) return data.pools;
-    return data.pools.filter(
-      (p) =>
-        p.token_symbol.toLowerCase().includes(q) ||
-        (p.pool_name ?? "").toLowerCase().includes(q) ||
-        p.pool_address.toLowerCase().includes(q) ||
-        p.token_mint.toLowerCase().includes(q),
-    );
-  }, [data, query]);
+    let rows = data.pools;
+    if (q) {
+      rows = rows.filter(
+        (p) =>
+          p.token_symbol.toLowerCase().includes(q) ||
+          (p.pool_name ?? "").toLowerCase().includes(q) ||
+          p.pool_address.toLowerCase().includes(q) ||
+          p.token_mint.toLowerCase().includes(q),
+      );
+    }
+    const dir = sortDir === "asc" ? 1 : -1;
+    const sorted = [...rows];
+    sorted.sort((a, b) => {
+      const cmpNullable = (av: number | null | undefined, bv: number | null | undefined) => {
+        const aMissing = av == null || Number.isNaN(av);
+        const bMissing = bv == null || Number.isNaN(bv);
+        if (aMissing && bMissing) return 0;
+        if (aMissing) return 1;
+        if (bMissing) return -1;
+        return dir * (av! - bv!);
+      };
+      switch (sortKey) {
+        case "share":
+          return dir * ((a.share_pct ?? 0) - (b.share_pct ?? 0));
+        case "amount":
+          return dir * (a.position_value_usd - b.position_value_usd);
+        case "generated":
+          return dir * (a.fees_generated_usd - b.fees_generated_usd);
+        case "claimed":
+          return dir * (a.claimed_fees_usd - b.claimed_fees_usd);
+        case "compounded":
+          return dir * (a.compounded_fees_usd - b.compounded_fees_usd);
+        case "unclaimed":
+          return dir * (a.unclaimed_fees_usd - b.unclaimed_fees_usd);
+        case "5m":
+        case "1h":
+        case "6h":
+        case "24h":
+          return cmpNullable(changeFor(a, sortKey), changeFor(b, sortKey));
+        default:
+          return 0;
+      }
+    });
+    return sorted;
+  }, [data, query, sortKey, sortDir]);
 
   const composition = useMemo(() => {
     if (!data) return [];
@@ -89,9 +161,7 @@ export function PoolIndexBook({ embedded = false }: { embedded?: boolean }) {
       data.pools.map((p) => ({
         id: `fee-${p.pool_address}`,
         label: p.token_symbol,
-        value:
-          (Number(p.unclaimed_fees_usd) || 0) +
-          (Number(p.claimed_fees_usd) || 0),
+        value: Number(p.fees_generated_usd) || 0,
       })),
       { maxSlices: 10, minPct: 1.2 },
     );
@@ -144,26 +214,31 @@ export function PoolIndexBook({ embedded = false }: { embedded?: boolean }) {
 
       {data && (
         <>
-          <section className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+          <section className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
             <Stat label="Pools" value={String(data.total_pools)} />
             <Stat
               label="Index amount"
               value={fmtMoney(data.total_position_usd)}
             />
             <Stat
-              label="Fees earned"
-              value={fmtMoney(data.total_fees_earned_usd)}
+              label="All-time generated"
+              value={fmtMoney(data.total_fees_generated_usd)}
               valueClass="text-emerald-300"
-              sub={`${fmtMoney(data.total_claimed_fees_usd)} claimed`}
+              sub="90% compound / 10% claim"
+            />
+            <Stat
+              label="All-time claimed"
+              value={fmtMoney(data.total_claimed_fees_usd)}
+              sub="10% quote"
+            />
+            <Stat
+              label="Compounded"
+              value={fmtMoney(data.total_compounded_fees_usd)}
+              sub="90% into LP"
             />
             <Stat
               label="Unclaimed"
               value={fmtMoney(data.total_fees_usd)}
-            />
-            <Stat
-              label="Treasury"
-              value={fmtMoney(data.treasury_usd)}
-              sub="$0 until $AI creator fees live"
             />
           </section>
 
@@ -207,13 +282,41 @@ export function PoolIndexBook({ embedded = false }: { embedded?: boolean }) {
               placeholder="Filter ticker / pool…"
               className="w-full max-w-sm rounded border border-zinc-800 bg-zinc-900 px-3 py-2 font-mono text-xs text-zinc-100 placeholder:text-zinc-600 focus:border-zinc-600 focus:outline-none"
             />
+            <div
+              className="inline-flex items-center gap-0.5 rounded border border-zinc-800/80 bg-zinc-950/40 p-0.5"
+              role="group"
+              aria-label="Sort by price change"
+            >
+              {HORIZONS.map((h) => {
+                const active = sortKey === h;
+                return (
+                  <button
+                    key={h}
+                    type="button"
+                    onClick={() => toggleSort(h)}
+                    className={`rounded px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider transition ${
+                      active
+                        ? "bg-zinc-800/90 text-zinc-100"
+                        : "text-zinc-600 hover:text-zinc-400"
+                    }`}
+                  >
+                    {h}
+                    {active && (
+                      <span className="ml-1 text-zinc-500">
+                        {sortDir === "asc" ? "↑" : "↓"}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
             <span className="font-mono text-[11px] text-zinc-500">
               {pools.length} pools
             </span>
           </div>
 
           <div className="overflow-x-auto rounded border border-zinc-800">
-            <table className="w-full min-w-[800px] border-collapse text-left">
+            <table className="w-full min-w-[980px] border-collapse text-left">
               <thead className="bg-zinc-900/80">
                 <tr className="border-b border-zinc-800">
                   <th className="px-3 py-2 font-mono text-[10px] uppercase text-zinc-500">
@@ -222,21 +325,64 @@ export function PoolIndexBook({ embedded = false }: { embedded?: boolean }) {
                   <th className="px-3 py-2 font-mono text-[10px] uppercase text-zinc-500">
                     Pool
                   </th>
-                  <th className="px-3 py-2 text-right font-mono text-[10px] uppercase text-zinc-500">
-                    Share
+                  <th className="px-3 py-2 text-right">
+                    <SortBtn
+                      label="Share"
+                      active={sortKey === "share"}
+                      dir={sortDir}
+                      onClick={() => toggleSort("share")}
+                    />
                   </th>
-                  <th className="px-3 py-2 text-right font-mono text-[10px] uppercase text-zinc-500">
-                    Amount
+                  <th className="px-3 py-2 text-right">
+                    <SortBtn
+                      label="Amount"
+                      active={sortKey === "amount"}
+                      dir={sortDir}
+                      onClick={() => toggleSort("amount")}
+                    />
                   </th>
-                  <th className="px-3 py-2 text-right font-mono text-[10px] uppercase text-zinc-500">
-                    Unclaimed
+                  <th className="px-3 py-2 text-right">
+                    <SortBtn
+                      label="Generated"
+                      active={sortKey === "generated"}
+                      dir={sortDir}
+                      onClick={() => toggleSort("generated")}
+                    />
                   </th>
-                  <th className="px-3 py-2 text-right font-mono text-[10px] uppercase text-zinc-500">
-                    Claimed
+                  <th className="px-3 py-2 text-right">
+                    <SortBtn
+                      label="Claimed"
+                      active={sortKey === "claimed"}
+                      dir={sortDir}
+                      onClick={() => toggleSort("claimed")}
+                    />
                   </th>
-                  <th className="px-3 py-2 text-right font-mono text-[10px] uppercase text-zinc-500">
-                    24h
+                  <th className="px-3 py-2 text-right">
+                    <SortBtn
+                      label="Compounded"
+                      active={sortKey === "compounded"}
+                      dir={sortDir}
+                      onClick={() => toggleSort("compounded")}
+                    />
                   </th>
+                  <th className="px-3 py-2 text-right">
+                    <SortBtn
+                      label="Unclaimed"
+                      active={sortKey === "unclaimed"}
+                      dir={sortDir}
+                      onClick={() => toggleSort("unclaimed")}
+                    />
+                  </th>
+                  {HORIZONS.map((h) => (
+                    <th key={h} className="px-2 py-2 text-right">
+                      <SortBtn
+                        label={h}
+                        active={sortKey === h}
+                        dir={sortDir}
+                        onClick={() => toggleSort(h)}
+                      />
+                    </th>
+                  ))}
                   <th className="px-3 py-2 font-mono text-[10px] uppercase text-zinc-500">
                     Map
                   </th>
@@ -275,16 +421,31 @@ export function PoolIndexBook({ embedded = false }: { embedded?: boolean }) {
                         {fmtMoney(p.position_value_usd)}
                       </td>
                       <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-emerald-300/90">
-                        {fmtMoney(p.unclaimed_fees_usd)}
+                        {fmtMoney(p.fees_generated_usd)}
                       </td>
                       <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-zinc-300">
                         {fmtMoney(p.claimed_fees_usd)}
                       </td>
-                      <td
-                        className={`px-3 py-2.5 text-right font-mono text-sm tabular-nums ${pnlClass(p.price_change_24h)}`}
-                      >
-                        {fmtPct(p.price_change_24h)}
+                      <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-zinc-400">
+                        {fmtMoney(p.compounded_fees_usd)}
                       </td>
+                      <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-zinc-300">
+                        {fmtMoney(p.unclaimed_fees_usd)}
+                      </td>
+                      {HORIZONS.map((h) => {
+                        const v = changeFor(p, h);
+                        const focus = sortKey === h;
+                        return (
+                          <td
+                            key={h}
+                            className={`px-2 py-2.5 text-right font-mono text-[11px] tabular-nums tracking-tight ${changeTone(v)} ${
+                              focus ? "opacity-100" : "opacity-50"
+                            }`}
+                          >
+                            {fmtPctShort(v)}
+                          </td>
+                        );
+                      })}
                       <td className="px-3 py-2.5 font-mono text-[10px] text-zinc-500">
                         {(p.map_wallets ?? []).map(mapLabel).join(" · ") || "—"}
                       </td>
@@ -350,6 +511,31 @@ export function PoolIndexBook({ embedded = false }: { embedded?: boolean }) {
         </>
       )}
     </div>
+  );
+}
+
+function SortBtn({
+  label,
+  active,
+  dir,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  dir: "asc" | "desc";
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex w-full items-center justify-end gap-1 font-mono text-[10px] uppercase tracking-wider transition hover:text-zinc-200 ${
+        active ? "text-zinc-200" : "text-zinc-500"
+      }`}
+    >
+      {label}
+      {active && <span>{dir === "asc" ? "↑" : "↓"}</span>}
+    </button>
   );
 }
 

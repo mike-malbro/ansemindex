@@ -33,9 +33,7 @@ export function IndexCharts({
     const slices: PieSlice[] = data.pools.map((p) => ({
       id: `fee-${p.pool_address}`,
       label: p.token_symbol,
-      value:
-        (Number(p.unclaimed_fees_usd) || 0) +
-        (Number(p.claimed_fees_usd) || 0),
+      value: Number(p.fees_generated_usd) || 0,
     }));
     return consolidateSlices(slices, { maxSlices: 10, minPct: 1.2 });
   }, [data.pools]);

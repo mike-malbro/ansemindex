@@ -52,3 +52,18 @@ export function pnlClass(x: number | null | undefined): string {
   if (x == null || Number.isNaN(x) || x === 0) return "text-zinc-400";
   return x > 0 ? "text-emerald-400" : "text-rose-400";
 }
+
+/** Soft green/red for the Index % tree — low-key, not neon. */
+export function changeTone(x: number | null | undefined): string {
+  if (x == null || Number.isNaN(x)) return "text-zinc-600";
+  if (x === 0) return "text-zinc-500";
+  if (x > 0) return "text-emerald-500/80";
+  return "text-rose-400/75";
+}
+
+export function fmtPctShort(x: number | null | undefined): string {
+  if (x == null || Number.isNaN(x)) return "·";
+  const a = Math.abs(x);
+  const n = a >= 100 ? a.toFixed(0) : a >= 10 ? a.toFixed(1) : a.toFixed(2);
+  return `${x >= 0 ? "+" : "-"}${n}%`;
+}

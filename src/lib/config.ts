@@ -41,6 +41,18 @@ export const REFRESH_INTERVAL_MS = Number(
 export const METEORA_DAMM_V2_BASE =
   process.env.METEORA_DAMM_V2_BASE ?? "https://damm-v2.datapi.meteora.ag";
 
+/**
+ * Index pools are set up as DAMM v2 compounding fee mode:
+ * 90% auto-compounds into LP, 10% claimable in quote (ANSEM).
+ * Meteora only reports the claimable slice — we back out generated/compounded.
+ */
+export const COMPOUNDING_FEE_BPS = Number(
+  process.env.NEXT_PUBLIC_COMPOUNDING_FEE_BPS ??
+    process.env.COMPOUNDING_FEE_BPS ??
+    9000,
+);
+export const CLAIM_FEE_BPS = 10_000 - COMPOUNDING_FEE_BPS;
+
 export const DEXSCREENER_BASE =
   process.env.DEXSCREENER_BASE ?? "https://api.dexscreener.com";
 

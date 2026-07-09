@@ -1,7 +1,8 @@
 import { ANSEM_MINT, DEXSCREENER_BASE } from "./config";
 import { cacheGet, cacheSet } from "./cache";
+import { feeBreakdownForPosition } from "./fees";
+import { positionValueUsd } from "./meteora";
 import type { EnrichedPosition, OpenPosition, TokenInfo } from "./types";
-import { positionValueUsd, unclaimedFeesUsd } from "./meteora";
 
 type DexPair = {
   baseToken?: { address?: string; symbol?: string };
@@ -123,10 +124,14 @@ export async function enrichPositions(
   return positions.map((p) => {
     const { constituent, ansem } = pickConstituent(p, ansemMint);
     const e = dex.get(constituent.address) ?? {};
+    const fees = feeBreakdownForPosition(p);
     return {
       ...p,
       position_value_usd: positionValueUsd(p),
-      unclaimed_fees_usd: unclaimedFeesUsd(p),
+      unclaimed_fees_usd: fees.unclaimed_usd,
+      claimed_fees_usd: fees.claimed_usd,
+      compounded_fees_usd: fees.compounded_usd,
+      fees_generated_usd: fees.generated_usd,
       constituent_token: constituent,
       ansem_token: ansem,
       ticker: constituent.symbol || p.pool_name?.split("-")[0] || "?",

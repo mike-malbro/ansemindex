@@ -18,6 +18,12 @@ import {
   writeIndexSnapshotFromDb,
 } from "./fee-ledger";
 import {
+  COLLECT_FEE_COMPOUNDING,
+  feeBreakdownForPosition,
+  feeBreakdownFromClaimable,
+  sumFeeBreakdowns,
+} from "./fees";
+import {
   claimedFeesUsd,
   getOpenPositions,
   positionValueUsd,
@@ -112,8 +118,10 @@ export async function ingestControllerWallet(
            pool_id, controller_wallet, position_address,
            position_value_usd, unclaimed_fees_usd, claimed_fees_usd,
            token_amount, ansem_amount, token_usd, ansem_usd,
-           pool_tvl_usd, volume_24h_usd, price_change_24h, market_cap_usd, raw
-         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
+           pool_tvl_usd, volume_24h_usd,
+           price_change_5m, price_change_1h, price_change_6h, price_change_24h,
+           market_cap_usd, raw
+         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
         [
           poolRow.id,
           wallet,
@@ -127,6 +135,9 @@ export async function ingestControllerWallet(
           amounts.ansem_usd,
           null,
           p.volume_24h ?? null,
+          p.price_change_5m ?? null,
+          p.price_change_1h ?? null,
+          p.price_change_6h ?? null,
           p.price_change_24h ?? null,
           p.market_cap ?? null,
           JSON.stringify({
@@ -163,6 +174,10 @@ export async function ingestControllerWallet(
       [run!.id, upserted, enriched.length],
     );
 
+    const feeSum = sumFeeBreakdowns(
+      open.positions.map((p) => feeBreakdownForPosition(p)),
+    );
+
     return {
       poolsUpserted: upserted,
       positionsSeen: enriched.length,
@@ -175,6 +190,14 @@ export async function ingestControllerWallet(
         total_pools: open.total_pools ?? seenPools.size,
         sol_price: open.sol_price,
         totals: open.total,
+        fee_totals: {
+          unclaimed_usd: feeSum.unclaimed_usd,
+          claimed_usd: feeSum.claimed_usd,
+          compounded_usd: feeSum.compounded_usd,
+          generated_usd: feeSum.generated_usd,
+          compound_pct: feeSum.compound_pct,
+          claim_pct: feeSum.claim_pct,
+        },
         positions: enriched,
       },
     };
@@ -289,6 +312,9 @@ export async function readIndexFromDb(): Promise<IndexPayload | null> {
     ansem_usd: number;
     pool_tvl_usd: number | null;
     volume_24h_usd: number | null;
+    price_change_5m: number | null;
+    price_change_1h: number | null;
+    price_change_6h: number | null;
     price_change_24h: number | null;
     market_cap_usd: number | null;
     position_address: string | null;
@@ -311,6 +337,9 @@ export async function readIndexFromDb(): Promise<IndexPayload | null> {
          ps.ansem_usd,
          ps.pool_tvl_usd,
          ps.volume_24h_usd,
+         ps.price_change_5m,
+         ps.price_change_1h,
+         ps.price_change_6h,
          ps.price_change_24h,
          ps.market_cap_usd,
          ps.snapshot_at
@@ -336,6 +365,9 @@ export async function readIndexFromDb(): Promise<IndexPayload | null> {
        COALESCE(SUM(l.ansem_usd), 0)::float8 AS ansem_usd,
        MAX(l.pool_tvl_usd)::float8 AS pool_tvl_usd,
        MAX(l.volume_24h_usd)::float8 AS volume_24h_usd,
+       MAX(l.price_change_5m)::float8 AS price_change_5m,
+       MAX(l.price_change_1h)::float8 AS price_change_1h,
+       MAX(l.price_change_6h)::float8 AS price_change_6h,
        MAX(l.price_change_24h)::float8 AS price_change_24h,
        MAX(l.market_cap_usd)::float8 AS market_cap_usd,
        (ARRAY_AGG(l.position_address ORDER BY l.position_value_usd DESC NULLS LAST))[1] AS position_address,
@@ -353,17 +385,14 @@ export async function readIndexFromDb(): Promise<IndexPayload | null> {
     (s, p) => s + Number(p.position_value_usd || 0),
     0,
   );
-  const total_fees_usd = raw.reduce(
-    (s, p) => s + Number(p.unclaimed_fees_usd || 0),
-    0,
-  );
-  const total_claimed_fees_usd = raw.reduce(
-    (s, p) => s + Number(p.claimed_fees_usd || 0),
-    0,
-  );
-
   const pools: IndexPoolRow[] = raw.map((p) => {
     const value = Number(p.position_value_usd || 0);
+    // Index pools are 90% compound / 10% claim-in-quote; expand claimable slice.
+    const fees = feeBreakdownFromClaimable(
+      Number(p.unclaimed_fees_usd || 0),
+      Number(p.claimed_fees_usd || 0),
+      COLLECT_FEE_COMPOUNDING,
+    );
     return {
       pool_id: p.pool_id,
       pool_address: p.pool_address,
@@ -375,14 +404,19 @@ export async function readIndexFromDb(): Promise<IndexPayload | null> {
       status: p.status,
       last_seen_at: p.last_seen_at,
       position_value_usd: value,
-      unclaimed_fees_usd: Number(p.unclaimed_fees_usd || 0),
-      claimed_fees_usd: Number(p.claimed_fees_usd || 0),
+      unclaimed_fees_usd: fees.unclaimed_usd,
+      claimed_fees_usd: fees.claimed_usd,
+      compounded_fees_usd: fees.compounded_usd,
+      fees_generated_usd: fees.generated_usd,
       token_amount: Number(p.token_amount || 0),
       ansem_amount: Number(p.ansem_amount || 0),
       token_usd: Number(p.token_usd || 0),
       ansem_usd: Number(p.ansem_usd || 0),
       pool_tvl_usd: p.pool_tvl_usd,
       volume_24h_usd: p.volume_24h_usd,
+      price_change_5m: p.price_change_5m,
+      price_change_1h: p.price_change_1h,
+      price_change_6h: p.price_change_6h,
       price_change_24h: p.price_change_24h,
       market_cap_usd: p.market_cap_usd,
       position_address: p.position_address,
@@ -392,6 +426,23 @@ export async function readIndexFromDb(): Promise<IndexPayload | null> {
       snapshot_at: p.snapshot_at,
     };
   });
+
+  const total_fees_usd = pools.reduce(
+    (s, p) => s + Number(p.unclaimed_fees_usd || 0),
+    0,
+  );
+  const total_claimed_fees_usd = pools.reduce(
+    (s, p) => s + Number(p.claimed_fees_usd || 0),
+    0,
+  );
+  const total_compounded_fees_usd = pools.reduce(
+    (s, p) => s + Number(p.compounded_fees_usd || 0),
+    0,
+  );
+  const total_fees_generated_usd = pools.reduce(
+    (s, p) => s + Number(p.fees_generated_usd || 0),
+    0,
+  );
 
   const map_wallets: MapWalletRow[] = walletList.map((w) => {
     const mine = pools.filter((p) =>
@@ -420,10 +471,7 @@ export async function readIndexFromDb(): Promise<IndexPayload | null> {
         0,
       ),
       fees_earned_usd: mine.reduce(
-        (s, p) =>
-          s +
-          Number(p.unclaimed_fees_usd || 0) +
-          Number(p.claimed_fees_usd || 0),
+        (s, p) => s + Number(p.fees_generated_usd || 0),
         0,
       ),
     };
@@ -454,6 +502,8 @@ export async function readIndexFromDb(): Promise<IndexPayload | null> {
     total_fees_usd,
     total_claimed_fees_usd,
     total_fees_earned_usd: total_fees_usd + total_claimed_fees_usd,
+    total_compounded_fees_usd,
+    total_fees_generated_usd,
     pools,
   };
 }
