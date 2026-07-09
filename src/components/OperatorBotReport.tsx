@@ -26,47 +26,65 @@ export function OperatorBotReport() {
         </h3>
         <p className="mt-2 text-xs leading-relaxed text-zinc-300">
           The bot is a <span className="text-emerald-300">copycat of your
-          wallet holdings</span>. Open TOKEN–ANSEM positions on the map / LP
-          wallet are the instruction set. You control it manually by what you
-          hold, seed, and claim — the tick mirrors that book.
-        </p>
-        <p className="mt-3 rounded border border-zinc-800 bg-zinc-950/60 px-3 py-2 text-[11px] leading-relaxed text-zinc-400">
-          <span className="text-emerald-300">Proportional:</span> if you sell
-          90% of a position, the creator / bot book sells 90% of that same
-          position. Your Δ% is the instruction — not absolute dollars. Later:
-          ML (see-microtrader) watches the DEX for new fee entries; same
-          process continues with manual override.
+          wallet holdings</span>. Your map / LP wallet is the{" "}
+          <span className="text-zinc-100">leader</span>. The creator / bot book
+          is the <span className="text-zinc-100">follower</span>.
         </p>
       </div>
 
       <div>
         <h3 className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-          Tick functions
+          Mirror workflow
+        </h3>
+        <ul className="mt-2 space-y-1.5 text-xs text-zinc-400">
+          <li>
+            <span className="text-zinc-200">Enter</span> — you seed a pool →
+            follower enters (proportional)
+          </li>
+          <li>
+            <span className="text-zinc-200">Trim</span> — you sell 90% →
+            follower sells 90% of that position
+          </li>
+          <li>
+            <span className="text-emerald-300">Zap out</span> — you full-exit a
+            pool → follower <span className="text-emerald-300">zaps out</span>{" "}
+            the same pool (flat, no dust policy)
+          </li>
+          <li>
+            <span className="text-zinc-200">Re-enter</span> — you come back →
+            follower re-enters on the next mirror pass
+          </li>
+        </ul>
+        <p className="mt-3 font-mono text-[10px] leading-relaxed text-zinc-600">
+          Loop: snapshot leader → snapshot follower → diff per pool → execute
+          follower txs → persist → repeat. Dry-run first.
+        </p>
+      </div>
+
+      <div>
+        <h3 className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+          Fee tick (separate loop)
         </h3>
         <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-xs text-zinc-400">
           <li>
             <span className="text-zinc-200">Read</span> — open DAMM positions
-            on LP / map wallet
           </li>
           <li>
             <span className="text-zinc-200">Claim</span> — LP fees above min
-            threshold
           </li>
           <li>
-            <span className="text-zinc-200">Sweep</span> — SOL LP → operator
-            (when set)
+            <span className="text-zinc-200">Sweep</span> — SOL → operator
           </li>
           <li>
-            <span className="text-zinc-200">Route</span> — buy+send ANSEM to
-            dest · SOL reserve
+            <span className="text-zinc-200">Route</span> — buy+send ANSEM ·
+            reserve
           </li>
           <li>
-            <span className="text-zinc-200">Gate</span> — under 70% ANSEM:
-            build; at ≥ 70%: buybacks
+            <span className="text-zinc-200">Gate</span> — &lt;70% build · ≥70%
+            buybacks
           </li>
           <li>
-            <span className="text-zinc-200">Persist</span> — tick + fee events
-            into Postgres ledger
+            <span className="text-zinc-200">Persist</span> — ledger rows
           </li>
         </ol>
       </div>
@@ -91,7 +109,7 @@ export function OperatorBotReport() {
             Ops doc
           </h3>
           <p className="mt-1 text-[11px] text-zinc-400">
-            Full write-up for collaborators (repo only).
+            Full mirror + zap workflow (repo).
           </p>
           <a
             href="https://github.com/mike-malbro/ansemindex/blob/main/OPERATOR.md"
