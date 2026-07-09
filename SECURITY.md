@@ -16,7 +16,7 @@ Forbidden on hub: any `*_PRIVATE_KEY`, `*_SECRET_KEY`, mnemonic, keypair JSON.
 
 ## Perpad parallel
 
-Perpad keeps treasury keys in Fly/Supabase **secrets**, never in the DB. We mirror that split for ANSEM Index.
+Perpad keeps treasury keys in Fly/Supabase **secrets**, never in the DB. We mirror that split for ANSEM LP INDEX.
 
 ## Production data
 

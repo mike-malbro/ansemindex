@@ -25,6 +25,7 @@ type Horizon = "5m" | "1h" | "6h" | "24h";
 type SortKey =
   | "share"
   | "your_pct"
+  | "mcap"
   | "amount"
   | "generated"
   | "claimed"
@@ -223,6 +224,8 @@ export function PoolIndexBook({
           return dir * ((a.share_pct ?? 0) - (b.share_pct ?? 0));
         case "your_pct":
           return dir * (a.your_pool_pct - b.your_pool_pct);
+        case "mcap":
+          return cmpNullable(a.market_cap_usd, b.market_cap_usd);
         case "amount":
           return dir * (a.position_value_usd - b.position_value_usd);
         case "generated":
@@ -496,6 +499,14 @@ export function PoolIndexBook({
                   </th>
                   <th className="px-3 py-2 text-right">
                     <SortBtn
+                      label="Mcap"
+                      active={sortKey === "mcap"}
+                      dir={sortDir}
+                      onClick={() => toggleSort("mcap")}
+                    />
+                  </th>
+                  <th className="px-3 py-2 text-right">
+                    <SortBtn
                       label="Amount"
                       active={sortKey === "amount"}
                       dir={sortDir}
@@ -582,6 +593,9 @@ export function PoolIndexBook({
                       )}
                       <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-emerald-200/90">
                         {(p.share_pct ?? 0).toFixed(1)}%
+                      </td>
+                      <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-zinc-200">
+                        {fmtMoney(p.market_cap_usd)}
                       </td>
                       <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-zinc-100">
                         {fmtMoney(p.position_value_usd)}

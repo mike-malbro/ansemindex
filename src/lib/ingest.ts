@@ -30,6 +30,7 @@ import {
   positionValueUsd,
   unclaimedFeesUsd,
 } from "./meteora";
+import { discoverLpWalletsForPools } from "./pool-lps";
 import type {
   EnrichedPosition,
   IndexPayload,
@@ -54,7 +55,12 @@ function splitAmounts(p: EnrichedPosition) {
 /** Ingest one map wallet’s open positions (pubkey only). */
 export async function ingestControllerWallet(
   wallet: string,
-  opts?: { sortOrder?: number; closeMissing?: boolean; seenUnion?: Set<string> },
+  opts?: {
+    sortOrder?: number;
+    label?: string;
+    closeMissing?: boolean;
+    seenUnion?: Set<string>;
+  },
 ): Promise<{
   poolsUpserted: number;
   positionsSeen: number;
@@ -69,8 +75,29 @@ export async function ingestControllerWallet(
   const project = await getPrimaryProject();
   if (!project) throw new Error("No project row — run migrations");
 
-  const sortOrder = opts?.sortOrder ?? TRACKED_WALLETS.indexOf(wallet);
-  const label = mapWalletLabel(sortOrder < 0 ? 0 : sortOrder, wallet);
+  const trackedIdx = TRACKED_WALLETS.findIndex(
+    (w) => w.toLowerCase() === wallet.toLowerCase(),
+  );
+  const existing = await queryOne<{
+    label: string;
+    sort_order: number;
+  }>(
+    `SELECT label, sort_order FROM controller_wallets
+     WHERE project_id = $1 AND lower(address) = lower($2)`,
+    [project.id, wallet],
+  );
+
+  const sortOrder =
+    opts?.sortOrder ??
+    existing?.sort_order ??
+    (trackedIdx >= 0 ? trackedIdx : await nextMapWalletSortOrder(project.id));
+
+  const label =
+    opts?.label ??
+    existing?.label ??
+    (trackedIdx >= 0
+      ? mapWalletLabel(trackedIdx, wallet)
+      : `map(${sortOrder})`);
 
   const run = await queryOne<{ id: string }>(
     `INSERT INTO ingest_runs (project_id, wallet, status)
@@ -168,9 +195,9 @@ export async function ingestControllerWallet(
        VALUES ($1, $2, $3, $4)
        ON CONFLICT (project_id, address) DO UPDATE SET
          active = true,
-         label = EXCLUDED.label,
+         label = COALESCE(NULLIF(EXCLUDED.label, ''), controller_wallets.label),
          sort_order = EXCLUDED.sort_order`,
-      [project.id, wallet, label, sortOrder < 0 ? 0 : sortOrder],
+      [project.id, wallet, label, sortOrder],
     );
 
     await query(
@@ -239,14 +266,37 @@ export async function ingestControllerWallet(
   }
 }
 
+async function nextMapWalletSortOrder(projectId: string): Promise<number> {
+  const row = await queryOne<{ n: number }>(
+    `SELECT COALESCE(MAX(sort_order), -1) + 1 AS n
+     FROM controller_wallets WHERE project_id = $1`,
+    [projectId],
+  );
+  return Number(row?.n ?? TRACKED_WALLETS.length);
+}
+
+async function listActiveMapWallets(projectId: string) {
+  return query<{
+    address: string;
+    label: string;
+    sort_order: number;
+  }>(
+    `SELECT address, label, sort_order FROM controller_wallets
+     WHERE project_id = $1 AND active = true
+     ORDER BY sort_order ASC`,
+    [projectId],
+  );
+}
+
 /**
- * Auto-ingest every map wallet in TRACKED_WALLETS and merge into one pool index.
- * Call on refresh — no manual wallet pick needed.
+ * Ingest every map wallet: env TRACKED_WALLETS, then auto-discover every
+ * other LP wallet in those Index pools (on-chain), then ingest them too.
  */
 export async function ingestAllMapWallets(): Promise<{
   wallets: string[];
   poolsUpserted: number;
   positionsSeen: number;
+  discovered?: number;
 }> {
   await ensureMigrated();
   if (!hasDatabase()) throw new Error("DATABASE_URL not configured");
@@ -254,19 +304,96 @@ export async function ingestAllMapWallets(): Promise<{
   const project = await getPrimaryProject();
   if (!project) throw new Error("No project row — run migrations");
 
+  // Seed env wallets into DB (labels / order).
+  for (let i = 0; i < TRACKED_WALLETS.length; i++) {
+    const address = TRACKED_WALLETS[i]!;
+    await query(
+      `INSERT INTO controller_wallets (project_id, address, label, sort_order)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (project_id, address) DO UPDATE SET
+         active = true,
+         label = EXCLUDED.label,
+         sort_order = EXCLUDED.sort_order`,
+      [project.id, address, mapWalletLabel(i, address), i],
+    );
+  }
+
   const seenUnion = new Set<string>();
   let poolsUpserted = 0;
   let positionsSeen = 0;
+  const wallets: string[] = [];
 
-  for (let i = 0; i < TRACKED_WALLETS.length; i++) {
-    const wallet = TRACKED_WALLETS[i]!;
-    const result = await ingestControllerWallet(wallet, {
-      sortOrder: i,
-      closeMissing: false,
-      seenUnion,
-    });
-    poolsUpserted += result.poolsUpserted;
-    positionsSeen += result.positionsSeen;
+  async function ingestList(
+    list: { address: string; label: string; sort_order: number }[],
+  ) {
+    for (const w of list) {
+      if (wallets.some((a) => a.toLowerCase() === w.address.toLowerCase())) {
+        continue;
+      }
+      wallets.push(w.address);
+      const result = await ingestControllerWallet(w.address, {
+        sortOrder: w.sort_order,
+        label: w.label,
+        closeMissing: false,
+        seenUnion,
+      });
+      poolsUpserted += result.poolsUpserted;
+      positionsSeen += result.positionsSeen;
+    }
+  }
+
+  // Pass 1 — known map wallets (env + previously discovered)
+  await ingestList(await listActiveMapWallets(project.id));
+
+  // Auto-discover every LP owner in Index pools (no manual add)
+  const poolAddrs =
+    seenUnion.size > 0
+      ? [...seenUnion]
+      : (
+          await query<{ pool_address: string }>(
+            `SELECT pool_address FROM pools
+             WHERE project_id = $1 AND status = 'open'`,
+            [project.id],
+          )
+        ).map((p) => p.pool_address);
+
+  let discovered = 0;
+  if (poolAddrs.length > 0) {
+    try {
+      const owners = await discoverLpWalletsForPools(poolAddrs);
+      const known = new Set(wallets.map((a) => a.toLowerCase()));
+      const fresh: string[] = [];
+      for (const owner of owners) {
+        if (known.has(owner.toLowerCase())) continue;
+        known.add(owner.toLowerCase());
+        fresh.push(owner);
+      }
+
+      for (const address of fresh) {
+        const sortOrder = await nextMapWalletSortOrder(project.id);
+        const label = `map(${sortOrder})`;
+        await query(
+          `INSERT INTO controller_wallets (project_id, address, label, sort_order)
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT (project_id, address) DO UPDATE SET
+             active = true`,
+          [project.id, address, label, sortOrder],
+        );
+      }
+
+      discovered = fresh.length;
+      if (fresh.length > 0) {
+        const toIngest = (await listActiveMapWallets(project.id)).filter((w) =>
+          fresh.some((a) => a.toLowerCase() === w.address.toLowerCase()),
+        );
+        await ingestList(toIngest);
+      }
+    } catch (e) {
+      console.warn(
+        "[ingest] LP wallet discovery failed:",
+        e instanceof Error ? e.message : e,
+      );
+    }
   }
 
   // Close pools not seen by any map wallet this pass
@@ -283,9 +410,10 @@ export async function ingestAllMapWallets(): Promise<{
   await writeIndexSnapshotFromDb("ingest");
 
   return {
-    wallets: [...TRACKED_WALLETS],
+    wallets,
     poolsUpserted,
     positionsSeen,
+    discovered,
   };
 }
 

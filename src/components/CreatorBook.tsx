@@ -16,8 +16,8 @@ import { PieChart, consolidateSlices, type PieSlice } from "./PieChart";
 import { HolderPanel } from "./HolderPanel";
 
 /**
- * $ANSEMLP creators — map wallets that seed the pool book.
- * Click a creator → drill-down (pools, pies, holders). Not the index itself.
+ * $ANSEMLP creators — every LP wallet found in Index TOKEN–ANSEM pools.
+ * Auto-discovered on refresh (on-chain). Click → drill-down.
  */
 export function CreatorBook({ embedded = false }: { embedded?: boolean }) {
   const [data, setData] = useState<IndexPayload | null>(null);
@@ -44,7 +44,8 @@ export function CreatorBook({ embedded = false }: { embedded?: boolean }) {
   }, []);
 
   useEffect(() => {
-    load(true);
+    // Fast paint from DB, then full refresh (auto-discovers new LP wallets)
+    void load(false).then(() => load(true));
     let ticks = 0;
     const id = setInterval(() => {
       ticks += 1;
@@ -76,7 +77,10 @@ export function CreatorBook({ embedded = false }: { embedded?: boolean }) {
 
   const creatorList = useMemo((): CreatorWalletRow[] => {
     if (!data) return [];
-    return data.map_wallets?.length ? data.map_wallets : data.creators;
+    const rows = data.map_wallets?.length ? data.map_wallets : data.creators;
+    return [...rows].sort(
+      (a, b) => (b.position_usd || 0) - (a.position_usd || 0),
+    );
   }, [data]);
 
   const creator: CreatorWalletRow | null = useMemo(() => {
@@ -134,8 +138,8 @@ export function CreatorBook({ embedded = false }: { embedded?: boolean }) {
             $ANSEMLP creators
           </h1>
           <p className="mt-1 max-w-xl font-mono text-[11px] text-zinc-500">
-            Map wallets that seed TOKEN–ANSEM pools into the index. Click a
-            creator to drill down — pools, fees, holders. Pubkeys only.
+            Every LP wallet in Index TOKEN–ANSEM pools — auto-loaded on
+            refresh. Click a creator to drill down. Pubkeys only.
           </p>
         </div>
         <button
@@ -252,6 +256,16 @@ export function CreatorBook({ embedded = false }: { embedded?: boolean }) {
                     </tr>
                   );
                 })}
+                {creatorList.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-3 py-8 text-center font-mono text-sm text-zinc-500"
+                    >
+                      No LP wallets yet — hit Refresh to discover.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </section>
@@ -331,7 +345,7 @@ export function CreatorBook({ embedded = false }: { embedded?: boolean }) {
                 </div>
 
                 <div className="overflow-x-auto rounded border border-zinc-800">
-                  <table className="w-full min-w-[720px] border-collapse text-left">
+                  <table className="w-full min-w-[800px] border-collapse text-left">
                     <thead className="bg-zinc-900/80">
                       <tr className="border-b border-zinc-800">
                         <th className="px-3 py-2 font-mono text-[10px] uppercase text-zinc-500">
@@ -339,6 +353,9 @@ export function CreatorBook({ embedded = false }: { embedded?: boolean }) {
                         </th>
                         <th className="px-3 py-2 font-mono text-[10px] uppercase text-zinc-500">
                           Pool
+                        </th>
+                        <th className="px-3 py-2 text-right font-mono text-[10px] uppercase text-zinc-500">
+                          Mcap
                         </th>
                         <th className="px-3 py-2 text-right font-mono text-[10px] uppercase text-zinc-500">
                           Amount
@@ -389,6 +406,9 @@ export function CreatorBook({ embedded = false }: { embedded?: boolean }) {
                                 {shortCa(p.pool_address)}
                               </div>
                             </td>
+                            <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-zinc-200">
+                              {fmtMoney(p.market_cap_usd)}
+                            </td>
                             <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-zinc-100">
                               {fmtMoney(p.position_value_usd)}
                             </td>
@@ -438,7 +458,7 @@ export function CreatorBook({ embedded = false }: { embedded?: boolean }) {
                       {creatorPools.length === 0 && (
                         <tr>
                           <td
-                            colSpan={7}
+                            colSpan={10}
                             className="px-3 py-8 text-center font-mono text-sm text-zinc-500"
                           >
                             No open pools for this creator.

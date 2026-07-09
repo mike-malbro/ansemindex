@@ -5,12 +5,12 @@ import {
   ingestControllerWallet,
   readIndexFromDb,
 } from "@/lib/ingest";
-import { assertNoSecrets } from "@/lib/security";
+import { assertNoSecrets, isLikelyPubkey } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 120;
+export const maxDuration = 300;
 
-/** GET /api/index — merged pool index from all map wallets (auto). */
+/** GET /api/index — merged pool index; refresh auto-discovers all pool LPs. */
 export async function GET(req: NextRequest) {
   try {
     const refresh = req.nextUrl.searchParams.get("refresh") === "1";
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
       if (oneWallet) {
         await ingestControllerWallet(oneWallet);
       } else {
-        // Auto: every TRACKED_WALLETS pubkey
+        // Env seeds + on-chain LP discovery across Index pools
         await ingestAllMapWallets();
       }
     }
@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-/** POST /api/index — force auto-ingest all map wallets. */
+/** POST /api/index — force ingest (all LPs auto-discovered, or one wallet). */
 export async function POST(req: NextRequest) {
   try {
     if (!hasDatabase()) {
@@ -70,6 +70,13 @@ export async function POST(req: NextRequest) {
         ? (body as { wallet: string }).wallet.trim()
         : "";
 
+    if (wallet && !isLikelyPubkey(wallet)) {
+      return NextResponse.json(
+        { error: "wallet must be a Solana pubkey" },
+        { status: 400 },
+      );
+    }
+
     const result = wallet
       ? await ingestControllerWallet(wallet)
       : await ingestAllMapWallets();
@@ -81,6 +88,9 @@ export async function POST(req: NextRequest) {
             wallets: result.wallets,
             poolsUpserted: result.poolsUpserted,
             positionsSeen: result.positionsSeen,
+            ...("discovered" in result
+              ? { discovered: result.discovered }
+              : {}),
           }
         : {
             poolsUpserted: result.poolsUpserted,

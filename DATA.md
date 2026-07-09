@@ -29,7 +29,7 @@ migrations in [`migrations/`](./migrations/).
 
 | Table | Role |
 |-------|------|
-| `projects` | One ANSEM Index project row |
+| `projects` | One ANSEM LP INDEX project row |
 | `controller_wallets` | Map wallets (discovery pubkeys) |
 | `pools` | TOKEN–ANSEM pool book |
 | `pool_snapshots` | Per-ingest LP position time series |

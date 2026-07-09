@@ -116,6 +116,9 @@ export function HomeIndex() {
                     Share
                   </th>
                   <th className="px-3 py-2 text-right text-[10px] uppercase text-zinc-500">
+                    Mcap
+                  </th>
+                  <th className="px-3 py-2 text-right text-[10px] uppercase text-zinc-500">
                     Amount
                   </th>
                   <th className="px-3 py-2 text-right text-[10px] uppercase text-zinc-500">
@@ -143,6 +146,9 @@ export function HomeIndex() {
                     </td>
                     <td className="px-3 py-2.5 text-right text-sm tabular-nums text-emerald-200/90">
                       {(p.share_pct ?? 0).toFixed(1)}%
+                    </td>
+                    <td className="px-3 py-2.5 text-right text-sm tabular-nums text-zinc-200">
+                      {fmtMoney(p.market_cap_usd)}
                     </td>
                     <td className="px-3 py-2.5 text-right text-sm tabular-nums text-zinc-100">
                       {fmtMoney(p.position_value_usd)}
