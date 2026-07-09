@@ -203,6 +203,25 @@ export type PortfolioPayload = {
   positions: EnrichedPosition[];
 };
 
+/** Top Index LP wallet (Wallet tab list). */
+export type TopWalletRow = {
+  rank: number;
+  address: string;
+  label: string;
+  pools: number;
+  position_usd: number;
+  /** Share of total Index LP value. */
+  index_pct: number;
+  unclaimed_fees_usd: number;
+  claimed_fees_usd: number;
+};
+
+export type TopWalletsPayload = {
+  total_index_usd: number;
+  wallets: TopWalletRow[];
+  fetched_at: string;
+};
+
 /** Live index row (merged across map wallets). */
 export type IndexPoolRow = {
   pool_id: string;
