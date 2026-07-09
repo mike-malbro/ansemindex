@@ -1,10 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { PortfolioPayload } from "@/lib/types";
 import { shortCa, solscanAccount } from "@/lib/format";
 import { looksLikeSecret, isLikelyPubkey } from "@/lib/security";
-import { PortfolioPoolBook } from "./PortfolioPoolBook";
+import { PoolIndexBook } from "./PoolIndexBook";
 
 function setWalletParam(wallet: string | null) {
   const url = new URL(window.location.href);
@@ -15,16 +14,14 @@ function setWalletParam(wallet: string | null) {
 }
 
 /**
- * Wallet tab — same board as Index (stats → pies → table).
+ * Wallet = exact same Index pool book, with pasted pubkey’s Your % overlaid.
  */
 export function WalletLookup() {
   const [input, setInput] = useState("");
   const [wallet, setWallet] = useState<string | null>(null);
-  const [portfolio, setPortfolio] = useState<PortfolioPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
 
-  const lookup = useCallback(async (raw: string) => {
+  const apply = useCallback((raw: string) => {
     const trimmed = raw.trim();
     if (!trimmed) {
       setError("Paste a Solana wallet address (pubkey).");
@@ -38,66 +35,29 @@ export function WalletLookup() {
       setError("That doesn’t look like a Solana pubkey.");
       return;
     }
-
-    setLoading(true);
     setError(null);
     setWallet(trimmed);
     setWalletParam(trimmed);
-
-    try {
-      const res = await fetch(
-        `/api/portfolio?wallet=${encodeURIComponent(trimmed)}`,
-        { cache: "no-store" },
-      );
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(body.error || `Lookup failed (${res.status})`);
-      }
-      setPortfolio(body as PortfolioPayload);
-    } catch (e) {
-      setPortfolio(null);
-      setError(e instanceof Error ? e.message : "Lookup failed");
-    } finally {
-      setLoading(false);
-    }
   }, []);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const w = params.get("wallet")?.trim();
+    const w = new URLSearchParams(window.location.search).get("wallet")?.trim();
     if (w) {
       setInput(w);
-      void lookup(w);
+      apply(w);
     }
-  }, [lookup]);
+  }, [apply]);
 
-  const fees = portfolio?.fee_totals;
-  const compoundPct = fees?.compound_pct ?? 90;
-  const claimPct = fees?.claim_pct ?? 10;
-
-  if (wallet && portfolio) {
+  if (wallet) {
     return (
-      <PortfolioPoolBook
+      <PoolIndexBook
+        embedded
+        mode="wallet"
+        wallet={wallet}
         title="Wallet"
-        subtitle="This pubkey’s % of each Index pool (TOKEN–ANSEM DAMM v2). Pool % = your LP ÷ pool TVL. Not holdings."
+        subtitle="Exact same Index pool book. Your % = this pubkey’s LP ÷ pool TVL on each TOKEN–ANSEM pool."
         refreshLabel="Refresh"
-        onRefresh={() => void lookup(input || wallet)}
-        refreshing={loading}
-        amountUsd={portfolio.totals.balances}
-        poolCount={portfolio.total_pools}
-        poolsWithShare={portfolio.pools_with_share}
-        avgPoolSharePct={portfolio.avg_pool_share_pct}
-        fees={{
-          unclaimed_usd: fees?.unclaimed_usd ?? 0,
-          claimed_usd: fees?.claimed_usd ?? 0,
-          compounded_usd: fees?.compounded_usd ?? 0,
-          generated_usd: fees?.generated_usd ?? 0,
-          compound_pct: compoundPct,
-          claim_pct: claimPct,
-        }}
-        positions={portfolio.positions}
-        caption="Only Index pool ownership % — how much of each Meteora pool this pubkey owns."
-        emptyMessage="0% of every Index pool — this pubkey has no open TOKEN–ANSEM LPs."
+        caption="Same pool book as Index — only Your % is this wallet’s share of each pool."
         lead={
           <div className="flex flex-wrap items-center gap-3">
             <a
@@ -112,7 +72,7 @@ export function WalletLookup() {
               className="flex min-w-0 flex-1 flex-col gap-2 sm:max-w-xl sm:flex-row"
               onSubmit={(e) => {
                 e.preventDefault();
-                void lookup(input);
+                apply(input);
               }}
             >
               <input
@@ -126,8 +86,7 @@ export function WalletLookup() {
               />
               <button
                 type="submit"
-                disabled={loading}
-                className="rounded border border-zinc-700 bg-zinc-900 px-3 py-2 font-mono text-xs text-zinc-200 hover:border-zinc-500 disabled:opacity-50"
+                className="rounded border border-zinc-700 bg-zinc-900 px-3 py-2 font-mono text-xs text-zinc-200 hover:border-zinc-500"
               >
                 Look up
               </button>
@@ -143,22 +102,19 @@ export function WalletLookup() {
 
   return (
     <div className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 px-4 py-4 sm:px-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="font-mono text-lg font-semibold text-zinc-100">
-            Wallet
-          </h1>
-          <p className="mt-1 max-w-xl font-mono text-[11px] text-zinc-500">
-            Paste a pubkey → its % of each Index pool (LP ÷ TVL). Not holdings.
-          </p>
-        </div>
+      <div>
+        <h1 className="font-mono text-lg font-semibold text-zinc-100">
+          Wallet
+        </h1>
+        <p className="mt-1 max-w-xl font-mono text-[11px] text-zinc-500">
+          Paste a pubkey → the exact Index pool book with Your % on each pool.
+        </p>
       </div>
-
       <form
-        className="flex flex-col gap-2 sm:flex-row sm:items-stretch"
+        className="flex flex-col gap-2 sm:flex-row"
         onSubmit={(e) => {
           e.preventDefault();
-          void lookup(input);
+          apply(input);
         }}
       >
         <input
@@ -172,29 +128,15 @@ export function WalletLookup() {
         />
         <button
           type="submit"
-          disabled={loading}
-          className="rounded border border-zinc-700 bg-zinc-900 px-4 py-2.5 font-mono text-sm text-zinc-200 hover:border-zinc-500 disabled:opacity-50"
+          className="rounded border border-zinc-700 bg-zinc-900 px-4 py-2.5 font-mono text-sm text-zinc-200 hover:border-zinc-500"
         >
-          {loading ? "Looking up…" : "Look up"}
+          Look up
         </button>
       </form>
-
       {error && (
         <div className="rounded border border-rose-900/60 bg-rose-950/40 px-4 py-3 font-mono text-sm text-rose-300">
           {error}
         </div>
-      )}
-
-      {loading && (
-        <p className="py-16 text-center font-mono text-sm text-zinc-500">
-          Loading pools…
-        </p>
-      )}
-
-      {!loading && !error && (
-        <p className="py-10 text-center font-mono text-xs text-zinc-600">
-          Paste a pubkey to see Index pool % (0% if none).
-        </p>
       )}
     </div>
   );

@@ -1,10 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import type { IndexPayload, IndexPoolRow } from "@/lib/types";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import type {
+  EnrichedPosition,
+  IndexPayload,
+  IndexPoolRow,
+  PortfolioPayload,
+} from "@/lib/types";
 import {
   changeTone,
   fmtMoney,
+  fmtPct,
   fmtPctShort,
   meteoraPoolUrl,
   shortCa,
@@ -12,12 +18,13 @@ import {
   solscanToken,
 } from "@/lib/format";
 import { REFRESH_INTERVAL_MS } from "@/lib/config";
-import { PieChart, consolidateSlices, type PieSlice } from "./PieChart";
+import { PieChart, consolidateSlices } from "./PieChart";
 import { HolderPanel } from "./HolderPanel";
 
 type Horizon = "5m" | "1h" | "6h" | "24h";
 type SortKey =
   | "share"
+  | "your_pct"
   | "amount"
   | "generated"
   | "claimed"
@@ -26,6 +33,12 @@ type SortKey =
   | Horizon;
 
 const HORIZONS: Horizon[] = ["5m", "1h", "6h", "24h"];
+
+type BookRow = IndexPoolRow & {
+  /** This wallet’s % of the pool (LP ÷ TVL). 0 if not in pool. */
+  your_pool_pct: number;
+  your_lp_usd: number;
+};
 
 function changeFor(p: IndexPoolRow, h: Horizon): number | null {
   switch (h) {
@@ -40,34 +53,110 @@ function changeFor(p: IndexPoolRow, h: Horizon): number | null {
   }
 }
 
-/** Pools-first index book — auto-merged from all map wallets. */
-export function PoolIndexBook({ embedded = false }: { embedded?: boolean }) {
+function mergeWalletOntoIndex(
+  index: IndexPayload,
+  portfolio: PortfolioPayload | null,
+): BookRow[] {
+  const byPool = new Map<string, EnrichedPosition>();
+  for (const p of portfolio?.positions ?? []) {
+    byPool.set(p.pool_address.toLowerCase(), p);
+  }
+  return index.pools.map((row) => {
+    const mine = byPool.get(row.pool_address.toLowerCase());
+    return {
+      ...row,
+      your_pool_pct: mine?.share_of_pool_pct ?? 0,
+      your_lp_usd: mine?.position_value_usd ?? 0,
+    };
+  });
+}
+
+export type PoolIndexBookProps = {
+  embedded?: boolean;
+  /**
+   * index = full pool book (default).
+   * wallet = same book, with this pubkey’s pool % overlaid.
+   */
+  mode?: "index" | "wallet";
+  /** Pubkey whose Index pool % to show (Creator / Wallet tabs). */
+  wallet?: string | null;
+  title?: string;
+  subtitle?: string;
+  refreshLabel?: string;
+  lead?: ReactNode;
+  caption?: string;
+};
+
+/**
+ * The pool book. Index / Creator / Wallet all render this — same board.
+ * Wallet mode adds Your % (LP ÷ pool TVL) on every Index pool row.
+ */
+export function PoolIndexBook({
+  embedded = false,
+  mode = "index",
+  wallet = null,
+  title,
+  subtitle,
+  refreshLabel,
+  lead,
+  caption,
+}: PoolIndexBookProps) {
+  const isWalletMode = mode === "wallet";
   const [data, setData] = useState<IndexPayload | null>(null);
+  const [portfolio, setPortfolio] = useState<PortfolioPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<IndexPoolRow | null>(null);
-  const [sortKey, setSortKey] = useState<SortKey>("24h");
+  const [sortKey, setSortKey] = useState<SortKey>(
+    isWalletMode ? "your_pct" : "24h",
+  );
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
-  const load = useCallback(async (refresh = false) => {
-    try {
-      const url = refresh ? "/api/index?refresh=1" : "/api/index";
-      const res = await fetch(url, { cache: "no-store" });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || `HTTP ${res.status}`);
+  const load = useCallback(
+    async (refresh = false) => {
+      try {
+        const url = refresh ? "/api/index?refresh=1" : "/api/index";
+        const indexPromise = fetch(url, { cache: "no-store" });
+        const portfolioPromise =
+          isWalletMode && wallet
+            ? fetch(`/api/portfolio?wallet=${encodeURIComponent(wallet)}`, {
+                cache: "no-store",
+              })
+            : Promise.resolve(null);
+
+        const [indexRes, portRes] = await Promise.all([
+          indexPromise,
+          portfolioPromise,
+        ]);
+
+        if (!indexRes.ok) {
+          const body = await indexRes.json().catch(() => ({}));
+          throw new Error(body.error || `HTTP ${indexRes.status}`);
+        }
+        setData((await indexRes.json()) as IndexPayload);
+
+        if (portRes) {
+          if (!portRes.ok) {
+            const body = await portRes.json().catch(() => ({}));
+            throw new Error(body.error || "Wallet pool % lookup failed");
+          }
+          setPortfolio((await portRes.json()) as PortfolioPayload);
+        } else {
+          setPortfolio(null);
+        }
+        setError(null);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Failed to load");
+      } finally {
+        setLoading(false);
       }
-      setData((await res.json()) as IndexPayload);
-      setError(null);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [isWalletMode, wallet],
+  );
 
   useEffect(() => {
+    setLoading(true);
     load(true);
     let ticks = 0;
     const id = setInterval(() => {
@@ -94,10 +183,18 @@ export function PoolIndexBook({ embedded = false }: { embedded?: boolean }) {
     }
   }
 
-  const pools = useMemo(() => {
+  const bookRows = useMemo(() => {
     if (!data) return [];
+    return isWalletMode ? mergeWalletOntoIndex(data, portfolio) : data.pools.map((p) => ({
+      ...p,
+      your_pool_pct: 0,
+      your_lp_usd: 0,
+    }));
+  }, [data, portfolio, isWalletMode]);
+
+  const pools = useMemo(() => {
     const q = query.trim().toLowerCase();
-    let rows = data.pools;
+    let rows = bookRows;
     if (q) {
       rows = rows.filter(
         (p) =>
@@ -110,7 +207,10 @@ export function PoolIndexBook({ embedded = false }: { embedded?: boolean }) {
     const dir = sortDir === "asc" ? 1 : -1;
     const sorted = [...rows];
     sorted.sort((a, b) => {
-      const cmpNullable = (av: number | null | undefined, bv: number | null | undefined) => {
+      const cmpNullable = (
+        av: number | null | undefined,
+        bv: number | null | undefined,
+      ) => {
         const aMissing = av == null || Number.isNaN(av);
         const bMissing = bv == null || Number.isNaN(bv);
         if (aMissing && bMissing) return 0;
@@ -121,6 +221,8 @@ export function PoolIndexBook({ embedded = false }: { embedded?: boolean }) {
       switch (sortKey) {
         case "share":
           return dir * ((a.share_pct ?? 0) - (b.share_pct ?? 0));
+        case "your_pct":
+          return dir * (a.your_pool_pct - b.your_pool_pct);
         case "amount":
           return dir * (a.position_value_usd - b.position_value_usd);
         case "generated":
@@ -141,7 +243,7 @@ export function PoolIndexBook({ embedded = false }: { embedded?: boolean }) {
       }
     });
     return sorted;
-  }, [data, query, sortKey, sortDir]);
+  }, [bookRows, query, sortKey, sortDir]);
 
   const composition = useMemo(() => {
     if (!data) return [];
@@ -167,10 +269,43 @@ export function PoolIndexBook({ embedded = false }: { embedded?: boolean }) {
     );
   }, [data]);
 
+  const yourPctPie = useMemo(() => {
+    if (!isWalletMode) return [];
+    return consolidateSlices(
+      bookRows.map((p) => ({
+        id: p.pool_address,
+        label: p.token_symbol,
+        value: Math.max(0, p.your_pool_pct),
+      })),
+      { maxSlices: 10, minPct: 1.2 },
+    );
+  }, [bookRows, isWalletMode]);
+
   const mapLabel = (addr: string) =>
     data?.map_wallets?.find(
       (m) => m.address.toLowerCase() === addr.toLowerCase(),
     )?.label ?? shortCa(addr, 4, 4);
+
+  const poolsWithShare = bookRows.filter((p) => p.your_pool_pct > 0).length;
+  const avgYourPct =
+    poolsWithShare > 0
+      ? bookRows
+          .filter((p) => p.your_pool_pct > 0)
+          .reduce((s, p) => s + p.your_pool_pct, 0) / poolsWithShare
+      : 0;
+
+  const heading = title ?? (isWalletMode ? "Wallet" : "Index");
+  const sub =
+    subtitle ??
+    (isWalletMode
+      ? "Same Index pool book. Your % = this pubkey’s LP ÷ pool TVL on each TOKEN–ANSEM pool."
+      : "DAMM v2 TOKEN–ANSEM pools. Share % weights the book. $AI creator fees buy ANSEM ($0 until live). Map wallets auto-ingest.");
+  const refreshText = refreshLabel ?? (isWalletMode ? "Refresh" : "Refresh index");
+  const footNote =
+    caption ??
+    (isWalletMode
+      ? "Exact same pool book as Index — Your % is this wallet’s share of each pool."
+      : "$AI creator fees buy ANSEM toward the 70% gate. Fees are $0 until live.");
 
   return (
     <div
@@ -181,11 +316,10 @@ export function PoolIndexBook({ embedded = false }: { embedded?: boolean }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="font-mono text-lg font-semibold text-zinc-100">
-            Index
+            {heading}
           </h1>
           <p className="mt-1 max-w-xl font-mono text-[11px] text-zinc-500">
-            DAMM v2 TOKEN–ANSEM pools. Share % weights the book. $AI creator
-            fees buy ANSEM ($0 until live). Map wallets auto-ingest.
+            {sub}
           </p>
         </div>
         <button
@@ -196,9 +330,11 @@ export function PoolIndexBook({ embedded = false }: { embedded?: boolean }) {
           }}
           className="rounded border border-zinc-700 bg-zinc-900 px-3 py-1.5 font-mono text-xs text-zinc-200 hover:border-zinc-500"
         >
-          Refresh index
+          {refreshText}
         </button>
       </div>
+
+      {lead}
 
       {error && (
         <div className="rounded border border-rose-900/60 bg-rose-950/40 px-4 py-3 font-mono text-sm text-rose-300">
@@ -220,33 +356,50 @@ export function PoolIndexBook({ embedded = false }: { embedded?: boolean }) {
               label="Index amount"
               value={fmtMoney(data.total_position_usd)}
             />
-            <Stat
-              label="All-time generated"
-              value={fmtMoney(data.total_fees_generated_usd)}
-              valueClass="text-emerald-300"
-              sub="90% compound / 10% claim"
-            />
-            <Stat
-              label="All-time claimed"
-              value={fmtMoney(data.total_claimed_fees_usd)}
-              sub="10% quote"
-            />
+            {isWalletMode ? (
+              <>
+                <Stat
+                  label="Your pools"
+                  value={String(poolsWithShare)}
+                  sub="share > 0%"
+                />
+                <Stat
+                  label="Avg your %"
+                  value={fmtPct(avgYourPct)}
+                  valueClass="text-emerald-300"
+                  sub="LP ÷ pool TVL"
+                />
+              </>
+            ) : (
+              <>
+                <Stat
+                  label="All-time generated"
+                  value={fmtMoney(data.total_fees_generated_usd)}
+                  valueClass="text-emerald-300"
+                  sub="90% compound / 10% claim"
+                />
+                <Stat
+                  label="All-time claimed"
+                  value={fmtMoney(data.total_claimed_fees_usd)}
+                  sub="10% quote"
+                />
+              </>
+            )}
             <Stat
               label="Compounded"
               value={fmtMoney(data.total_compounded_fees_usd)}
               sub="90% into LP"
             />
-            <Stat
-              label="Unclaimed"
-              value={fmtMoney(data.total_fees_usd)}
-            />
+            <Stat label="Unclaimed" value={fmtMoney(data.total_fees_usd)} />
           </section>
 
           <section className="grid gap-4 rounded border border-zinc-800 bg-zinc-900/30 p-4 lg:grid-cols-2">
             <PieChart
-              title="Index weights"
-              slices={composition}
+              title={isWalletMode ? "Your % by pool" : "Index weights"}
+              slices={isWalletMode ? yourPctPie : composition}
               size={180}
+              formatValue={isWalletMode ? (n) => fmtPct(n) : undefined}
+              emptyLabel={isWalletMode ? "0% everywhere" : "No data"}
               selectedId={selected?.pool_address ?? null}
               onSelect={(s) => {
                 if (!s || s.id === "__other") {
@@ -271,9 +424,7 @@ export function PoolIndexBook({ embedded = false }: { embedded?: boolean }) {
               }}
             />
           </section>
-          <p className="font-mono text-[10px] text-zinc-600">
-            $AI creator fees buy ANSEM toward the 70% gate. Fees are $0 until live.
-          </p>
+          <p className="font-mono text-[10px] text-zinc-600">{footNote}</p>
 
           <div className="flex flex-wrap items-center gap-3">
             <input
@@ -325,6 +476,16 @@ export function PoolIndexBook({ embedded = false }: { embedded?: boolean }) {
                   <th className="px-3 py-2 font-mono text-[10px] uppercase text-zinc-500">
                     Pool
                   </th>
+                  {isWalletMode && (
+                    <th className="px-3 py-2 text-right">
+                      <SortBtn
+                        label="Your %"
+                        active={sortKey === "your_pct"}
+                        dir={sortDir}
+                        onClick={() => toggleSort("your_pct")}
+                      />
+                    </th>
+                  )}
                   <th className="px-3 py-2 text-right">
                     <SortBtn
                       label="Share"
@@ -414,6 +575,11 @@ export function PoolIndexBook({ embedded = false }: { embedded?: boolean }) {
                           {shortCa(p.pool_address)}
                         </div>
                       </td>
+                      {isWalletMode && (
+                        <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-emerald-300/90">
+                          {fmtPct(p.your_pool_pct)}
+                        </td>
+                      )}
                       <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-emerald-200/90">
                         {(p.share_pct ?? 0).toFixed(1)}%
                       </td>
@@ -489,24 +655,41 @@ export function PoolIndexBook({ embedded = false }: { embedded?: boolean }) {
           )}
 
           <footer className="border-t border-zinc-800 pt-4 font-mono text-[10px] text-zinc-600">
-            Mapped from{" "}
-            {(data.map_wallets ?? data.wallets).map((m, i) => (
-              <span key={m.address}>
-                {i > 0 ? " + " : ""}
+            {isWalletMode && wallet ? (
+              <>
+                Wallet{" "}
                 <a
-                  href={solscanAccount(m.address)}
+                  href={solscanAccount(wallet)}
                   target="_blank"
                   rel="noreferrer"
                   className="text-zinc-400 hover:text-sky-400"
                 >
-                  {m.label}
-                </a>
-              </span>
-            ))}{" "}
-            · discovery only · pubkeys · synced{" "}
-            {data.ingested_at
-              ? new Date(data.ingested_at).toLocaleString()
-              : "—"}
+                  {shortCa(wallet, 6, 6)}
+                </a>{" "}
+                · same Index pool book · Your % = LP ÷ TVL
+              </>
+            ) : (
+              <>
+                Mapped from{" "}
+                {(data.map_wallets ?? data.wallets).map((m, i) => (
+                  <span key={m.address}>
+                    {i > 0 ? " + " : ""}
+                    <a
+                      href={solscanAccount(m.address)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-zinc-400 hover:text-sky-400"
+                    >
+                      {m.label}
+                    </a>
+                  </span>
+                ))}{" "}
+                · discovery only · pubkeys · synced{" "}
+                {data.ingested_at
+                  ? new Date(data.ingested_at).toLocaleString()
+                  : "—"}
+              </>
+            )}
           </footer>
         </>
       )}
