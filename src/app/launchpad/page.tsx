@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SiteNav } from "@/components/SiteNav";
+import { SiteFooter } from "@/components/SiteFooter";
 import { EXPLAIN_LAUNCHPAD } from "@/lib/thesis";
 
 export const metadata = {
@@ -10,7 +11,7 @@ export const metadata = {
 
 export default function LaunchpadPage() {
   return (
-    <div className="min-h-screen bg-zinc-950 font-mono text-zinc-100">
+    <div className="flex min-h-screen flex-col bg-zinc-950 font-mono text-zinc-100">
       <SiteNav current="/launchpad" />
       <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
         <p className="text-[10px] uppercase tracking-widest text-emerald-200/80">
@@ -65,6 +66,7 @@ export default function LaunchpadPage() {
           </Link>
         </div>
       </main>
+      <SiteFooter />
     </div>
   );
 }

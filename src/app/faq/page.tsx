@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SiteNav } from "@/components/SiteNav";
+import { SiteFooter } from "@/components/SiteFooter";
 import { INDEX_NAME, INDEX_TICKER } from "@/lib/config";
 import { ANSEM_TARGET_PCT } from "@/lib/thesis";
 
@@ -33,7 +34,7 @@ const FAQS = [
 
 export default function FaqPage() {
   return (
-    <div className="min-h-screen bg-zinc-950 font-mono text-zinc-100">
+    <div className="flex min-h-screen flex-col bg-zinc-950 font-mono text-zinc-100">
       <SiteNav />
       <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
         <p className="text-[10px] uppercase tracking-widest text-emerald-400/90">
@@ -80,6 +81,7 @@ export default function FaqPage() {
           </Link>
         </p>
       </main>
+      <SiteFooter />
     </div>
   );
 }

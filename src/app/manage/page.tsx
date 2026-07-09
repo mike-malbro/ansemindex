@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { SiteNav } from "@/components/SiteNav";
+import { SiteFooter } from "@/components/SiteFooter";
 import { ANSEM_TARGET_PCT } from "@/lib/thesis";
 import { NODE_MIN_USD, START_LIST, startListFloorUsd } from "@/lib/whitepaper";
 
@@ -66,15 +67,15 @@ export default function ManagePage() {
   const c = state?.config;
 
   return (
-    <div className="min-h-screen bg-zinc-950 font-mono text-zinc-100">
-      <SiteNav current="/manage" />
-      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
+    <div className="flex min-h-screen flex-col bg-zinc-950 font-mono text-zinc-100">
+      <SiteNav />
+      <div className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6">
       <div className="mb-6">
         <h1 className="text-xl font-semibold">Management</h1>
         <p className="mt-1 text-[11px] text-zinc-500">
-          Pubkeys only on this hub. Fees → buy tokens/ANSEM → send until{" "}
-          {(ANSEM_TARGET_PCT * 100).toFixed(0)}% ANSEM → then all buybacks · $
-          {NODE_MIN_USD}/node floor.
+          Pubkeys only. $AI creator fees → buy ANSEM until{" "}
+          {(ANSEM_TARGET_PCT * 100).toFixed(0)}% → buybacks · $
+          {NODE_MIN_USD}/node floor. Fees $0 until live.
         </p>
       </div>
 
@@ -198,6 +199,7 @@ export default function ManagePage() {
         </div>
       )}
       </div>
+      <SiteFooter />
     </div>
   );
 }

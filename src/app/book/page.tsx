@@ -1,5 +1,6 @@
 import { BookTabs } from "@/components/BookTabs";
 import { SiteNav } from "@/components/SiteNav";
+import { SiteFooter } from "@/components/SiteFooter";
 import { INDEX_NAME, INDEX_TICKER } from "@/lib/config";
 
 export const metadata = {
@@ -24,6 +25,7 @@ export default function BookPage() {
         </p>
       </div>
       <BookTabs />
+      <SiteFooter />
     </div>
   );
 }

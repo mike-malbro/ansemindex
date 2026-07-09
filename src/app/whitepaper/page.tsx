@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SiteNav } from "@/components/SiteNav";
+import { SiteFooter } from "@/components/SiteFooter";
 import { FeeCompoundChart } from "@/components/whitepaper/FeeCompoundChart";
 import { FeeFlywheelChart } from "@/components/whitepaper/FeeFlywheelChart";
 import { PoolDiagram } from "@/components/whitepaper/PoolDiagram";
@@ -54,7 +55,7 @@ export default function WhitepaperPage() {
   const pct = Math.round(ANSEM_TARGET_PCT * 100);
 
   return (
-    <div className="min-h-screen bg-zinc-950 font-mono text-zinc-100">
+    <div className="flex min-h-screen flex-col bg-zinc-950 font-mono text-zinc-100">
       <SiteNav current="/whitepaper" />
 
       <nav
@@ -386,8 +387,8 @@ export default function WhitepaperPage() {
         <Section id="roadmap">
           <h2 className="text-lg font-semibold">Roadmap</h2>
           <p className="mt-2 text-sm text-zinc-400">
-            Pools → launchpad → nodes → flywheel → long SOL / long ANSEM →
-            brain. Rules can shift as data arrives.
+            Index → Flywheel ($AI → ANSEM) → Launchpad → Network. Rules can
+            shift as data arrives.
           </p>
           <ol className="mt-6 space-y-3">
             {ROADMAP_PHASES.map((p) => (
@@ -413,13 +414,14 @@ export default function WhitepaperPage() {
           </ol>
           <p className="mt-6 text-[11px] text-zinc-600">
             Full page:{" "}
-            <Link href="/roadmap" className="text-sky-400 hover:underline">
+            <Link href="/roadmap" className="text-emerald-400 hover:underline">
               /roadmap
             </Link>
             .
           </p>
         </Section>
       </main>
+      <SiteFooter />
     </div>
   );
 }

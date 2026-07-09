@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SiteNav } from "@/components/SiteNav";
+import { SiteFooter } from "@/components/SiteFooter";
 import { HomeIndex } from "@/components/HomeIndex";
 import { FeeFlywheelChart } from "@/components/whitepaper/FeeFlywheelChart";
 import { INDEX_NAME, INDEX_TICKER } from "@/lib/config";
@@ -19,7 +20,7 @@ export const metadata = {
 export default function GuideHome() {
   const pct = Math.round(ANSEM_TARGET_PCT * 100);
   return (
-    <div className="min-h-screen bg-zinc-950 font-mono text-zinc-100">
+    <div className="flex min-h-screen flex-col bg-zinc-950 font-mono text-zinc-100">
       <SiteNav />
 
       <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
@@ -151,6 +152,7 @@ export default function GuideHome() {
           </ul>
         </section>
       </main>
+      <SiteFooter />
     </div>
   );
 }
