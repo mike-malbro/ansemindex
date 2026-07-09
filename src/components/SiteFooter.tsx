@@ -9,7 +9,6 @@ const CYCLE = [
   { href: "/faq", label: "FAQ" },
   { href: "/roadmap", label: "Roadmap" },
   { href: "/launchpad", label: "Launchpad" },
-  { href: "/manage", label: "Manage" },
 ] as const;
 
 /** Bottom cycle nav — secondary pages live here, not in the top bar. */

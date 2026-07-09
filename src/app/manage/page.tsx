@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
+import { OperatorBotReport } from "@/components/OperatorBotReport";
 import { ANSEM_TARGET_PCT } from "@/lib/thesis";
 import { NODE_MIN_USD, START_LIST, startListFloorUsd } from "@/lib/whitepaper";
 
@@ -71,13 +72,18 @@ export default function ManagePage() {
       <SiteNav />
       <div className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6">
       <div className="mb-6">
-        <h1 className="text-xl font-semibold">Management</h1>
+        <p className="font-mono text-[10px] uppercase tracking-widest text-zinc-500">
+          Operator desk · not public marketing
+        </p>
+        <h1 className="mt-1 text-xl font-semibold">Management</h1>
         <p className="mt-1 text-[11px] text-zinc-500">
           Pubkeys only. $AI creator fees → buy ANSEM until{" "}
           {(ANSEM_TARGET_PCT * 100).toFixed(0)}% → buybacks · $
           {NODE_MIN_USD}/node floor. Fees $0 until live.
         </p>
       </div>
+
+      <OperatorBotReport />
 
       {err && (
         <div className="mb-4 rounded border border-rose-900/50 bg-rose-950/40 px-3 py-2 text-sm text-rose-300">
