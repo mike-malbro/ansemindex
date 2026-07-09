@@ -79,13 +79,14 @@ export function WalletLookup() {
     return (
       <PortfolioPoolBook
         title="Wallet"
-        subtitle={`This pubkey’s open LPs on the Index list (TOKEN–ANSEM DAMM v2 only). Not holdings. ${compoundPct}% compound / ${claimPct}% claim. Pubkeys only.`}
+        subtitle="This pubkey’s % of each Index pool (TOKEN–ANSEM DAMM v2). Pool % = your LP ÷ pool TVL. Not holdings."
         refreshLabel="Refresh"
         onRefresh={() => void lookup(input || wallet)}
         refreshing={loading}
-        amountLabel="Index LP"
         amountUsd={portfolio.totals.balances}
         poolCount={portfolio.total_pools}
+        poolsWithShare={portfolio.pools_with_share}
+        avgPoolSharePct={portfolio.avg_pool_share_pct}
         fees={{
           unclaimed_usd: fees?.unclaimed_usd ?? 0,
           claimed_usd: fees?.claimed_usd ?? 0,
@@ -95,8 +96,8 @@ export function WalletLookup() {
           claim_pct: claimPct,
         }}
         positions={portfolio.positions}
-        caption="Only Index pools — how this pubkey LPs the ANSEM Index. No SPL holdings."
-        emptyMessage="0 Index pools — this pubkey has no open TOKEN–ANSEM LPs on the Index list."
+        caption="Only Index pool ownership % — how much of each Meteora pool this pubkey owns."
+        emptyMessage="0% of every Index pool — this pubkey has no open TOKEN–ANSEM LPs."
         lead={
           <div className="flex flex-wrap items-center gap-3">
             <a
@@ -148,8 +149,7 @@ export function WalletLookup() {
             Wallet
           </h1>
           <p className="mt-1 max-w-xl font-mono text-[11px] text-zinc-500">
-            Paste a pubkey → its open LPs on the Index pool list (TOKEN–ANSEM
-            DAMM v2). Not token holdings. Pubkeys only.
+            Paste a pubkey → its % of each Index pool (LP ÷ TVL). Not holdings.
           </p>
         </div>
       </div>
@@ -193,7 +193,7 @@ export function WalletLookup() {
 
       {!loading && !error && (
         <p className="py-10 text-center font-mono text-xs text-zinc-600">
-          Paste a pubkey to see Index LP interaction (0 pools if none).
+          Paste a pubkey to see Index pool % (0% if none).
         </p>
       )}
     </div>

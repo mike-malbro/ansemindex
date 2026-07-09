@@ -63,6 +63,10 @@ function normalizePositions(raw: EnrichedPosition[] | undefined): EnrichedPositi
     compounded_fees_usd: Number(p.compounded_fees_usd) || 0,
     unclaimed_fees_usd: Number(p.unclaimed_fees_usd) || 0,
     position_value_usd: Number(p.position_value_usd) || 0,
+    pool_tvl_usd:
+      p.pool_tvl_usd != null ? Number(p.pool_tvl_usd) : null,
+    share_of_pool_pct:
+      p.share_of_pool_pct != null ? Number(p.share_of_pool_pct) : null,
   }));
 }
 
@@ -218,13 +222,14 @@ export function CreatorFeePanel() {
     <>
       <PortfolioPoolBook
         title="Creator fees"
-        subtitle={`This wallet’s open LPs on the Index list (TOKEN–ANSEM DAMM v2 only). Not token holdings. Sort 5m / 1h / 6h / 24h. $AI fees → ANSEM gate · $0 until live.`}
+        subtitle="This wallet’s % of each Index pool (TOKEN–ANSEM DAMM v2). Pool % = your LP ÷ pool TVL. Not holdings."
         refreshLabel="Refresh"
         onRefresh={() => void load()}
         refreshing={loading}
-        amountLabel="Index LP"
         amountUsd={amountUsd}
         poolCount={poolCount}
+        poolsWithShare={portfolio?.pools_with_share}
+        avgPoolSharePct={portfolio?.avg_pool_share_pct}
         fees={{
           unclaimed_usd: Number(feeTotals.unclaimed_usd) || 0,
           claimed_usd: Number(feeTotals.claimed_usd) || 0,
@@ -234,11 +239,11 @@ export function CreatorFeePanel() {
           claim_pct: feeTotals.claim_pct ?? 10,
         }}
         positions={positions}
-        caption="Only Index pools — how this pubkey LPs the ANSEM Index. No SPL holdings."
+        caption="Only Index pool ownership % — how much of each Meteora pool this pubkey owns."
         emptyMessage={
           feeWallet
-            ? "0 Index pools — this fee wallet has no open TOKEN–ANSEM LPs on the Index list."
-            : "0 Index pools — set ANSEM_DEST_WALLET to track the creator fee wallet."
+            ? "0% of every Index pool — fee wallet has no open TOKEN–ANSEM LPs."
+            : "0% — set ANSEM_DEST_WALLET to track the creator fee wallet."
         }
         lead={gateLead}
       />

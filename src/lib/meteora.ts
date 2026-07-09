@@ -80,6 +80,39 @@ export async function getPool(address: string): Promise<PoolResponse> {
   return meteoraGet<PoolResponse>(`/pools/${address}`, POOL_TTL_MS);
 }
 
+/** Pool TVL USD (denominator for wallet share_of_pool_pct). */
+export async function getPoolTvlUsd(address: string): Promise<number | null> {
+  try {
+    const pool = await getPool(address);
+    const tvl = Number(pool.tvl);
+    return Number.isFinite(tvl) && tvl > 0 ? tvl : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Batch TVL lookups with light concurrency (Meteora rate limits). */
+export async function getPoolsTvlUsd(
+  addresses: string[],
+): Promise<Map<string, number>> {
+  const map = new Map<string, number>();
+  const unique = [...new Set(addresses.filter(Boolean))];
+  const concurrency = 4;
+  for (let i = 0; i < unique.length; i += concurrency) {
+    const batch = unique.slice(i, i + concurrency);
+    const results = await Promise.all(
+      batch.map(async (addr) => {
+        const tvl = await getPoolTvlUsd(addr);
+        return [addr, tvl] as const;
+      }),
+    );
+    for (const [addr, tvl] of results) {
+      if (tvl != null) map.set(addr, tvl);
+    }
+  }
+  return map;
+}
+
 export async function getPoolOhlcv(
   address: string,
   params?: { resolution?: string; from?: number; to?: number },

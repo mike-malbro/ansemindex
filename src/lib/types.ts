@@ -156,6 +156,13 @@ export type EnrichedPosition = OpenPosition & {
   compounded_fees_usd: number;
   /** All-time LP fees generated = claimable + compounded. */
   fees_generated_usd: number;
+  /** Full pool TVL USD (Meteora). */
+  pool_tvl_usd: number | null;
+  /**
+   * This wallet’s share of the pool: position_value / pool_tvl * 100.
+   * Primary Creator/Wallet metric — not holdings.
+   */
+  share_of_pool_pct: number | null;
   constituent_token: TokenInfo;
   ansem_token: TokenInfo;
   ticker: string;
@@ -184,10 +191,15 @@ export type PortfolioPayload = {
   fetched_at: string;
   total_positions: number;
   total_pools: number;
+  /** Index pools this wallet LPs (share > 0). */
+  pools_with_share: number;
+  /** Average share_of_pool_pct across pools with a position. */
+  avg_pool_share_pct: number;
   sol_price: number;
   totals: PortfolioTotals;
   /** All-time fee tracking (90% compound / 10% claim in quote). */
   fee_totals: PortfolioFeeTotals;
+  /** Index TOKEN–ANSEM LPs only, with share_of_pool_pct. */
   positions: EnrichedPosition[];
 };
 

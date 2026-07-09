@@ -132,6 +132,8 @@ export async function enrichPositions(
       claimed_fees_usd: fees.claimed_usd,
       compounded_fees_usd: fees.compounded_usd,
       fees_generated_usd: fees.generated_usd,
+      pool_tvl_usd: null,
+      share_of_pool_pct: null,
       constituent_token: constituent,
       ansem_token: ansem,
       ticker: constituent.symbol || p.pool_name?.split("-")[0] || "?",

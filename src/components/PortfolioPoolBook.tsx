@@ -5,6 +5,7 @@ import type { EnrichedPosition } from "@/lib/types";
 import {
   changeTone,
   fmtMoney,
+  fmtPct,
   fmtPctShort,
   meteoraPoolUrl,
   shortCa,
@@ -14,10 +15,10 @@ import { PieChart, consolidateSlices } from "./PieChart";
 
 type Horizon = "5m" | "1h" | "6h" | "24h";
 type SortKey =
+  | "pool_pct"
   | "amount"
+  | "tvl"
   | "generated"
-  | "claimed"
-  | "compounded"
   | "unclaimed"
   | Horizon;
 
@@ -51,10 +52,11 @@ type Props = {
   refreshLabel?: string;
   onRefresh: () => void;
   refreshing?: boolean;
-  /** Optional strip above stats (e.g. pubkey, gate bar). */
   lead?: ReactNode;
   caption?: string;
-  amountLabel?: string;
+  /** Index pools this wallet has a share in. */
+  poolsWithShare?: number;
+  avgPoolSharePct?: number;
   amountUsd: number;
   poolCount: number;
   fees: BookFeeTotals;
@@ -63,8 +65,8 @@ type Props = {
 };
 
 /**
- * Same board as Index: stats → dual pies → filter/horizons → pool table.
- * Used by Creator fees + Wallet so all three tabs match.
+ * Creator / Wallet board: Index pool ownership % only.
+ * share_of_pool_pct = wallet LP / pool TVL — not holdings.
  */
 export function PortfolioPoolBook({
   title,
@@ -74,20 +76,18 @@ export function PortfolioPoolBook({
   refreshing,
   lead,
   caption,
-  amountLabel = "Amount",
+  poolsWithShare,
+  avgPoolSharePct,
   amountUsd,
   poolCount,
   fees,
   positions,
-  emptyMessage = "No open TOKEN–ANSEM pools.",
+  emptyMessage = "0% of every Index pool — no open TOKEN–ANSEM LPs.",
 }: Props) {
   const [query, setQuery] = useState("");
-  const [sortKey, setSortKey] = useState<SortKey>("24h");
+  const [sortKey, setSortKey] = useState<SortKey>("pool_pct");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [selected, setSelected] = useState<string | null>(null);
-
-  const compoundPct = fees.compound_pct ?? 90;
-  const claimPct = fees.claim_pct ?? 10;
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) {
@@ -123,14 +123,14 @@ export function PortfolioPoolBook({
         return dir * (av! - bv!);
       };
       switch (sortKey) {
+        case "pool_pct":
+          return cmpNullable(a.share_of_pool_pct, b.share_of_pool_pct);
         case "amount":
           return dir * (a.position_value_usd - b.position_value_usd);
+        case "tvl":
+          return cmpNullable(a.pool_tvl_usd, b.pool_tvl_usd);
         case "generated":
           return dir * (a.fees_generated_usd - b.fees_generated_usd);
-        case "claimed":
-          return dir * (a.claimed_fees_usd - b.claimed_fees_usd);
-        case "compounded":
-          return dir * (a.compounded_fees_usd - b.compounded_fees_usd);
         case "unclaimed":
           return dir * (a.unclaimed_fees_usd - b.unclaimed_fees_usd);
         case "5m":
@@ -145,13 +145,13 @@ export function PortfolioPoolBook({
     return rows;
   }, [positions, query, sortKey, sortDir]);
 
-  const composition = useMemo(
+  const sharePie = useMemo(
     () =>
       consolidateSlices(
         (positions ?? []).map((p) => ({
           id: p.pool_address,
           label: p.ticker || "?",
-          value: Number(p.position_value_usd) || 0,
+          value: Math.max(0, Number(p.share_of_pool_pct) || 0),
         })),
         { maxSlices: 10, minPct: 1.2 },
       ),
@@ -170,6 +170,23 @@ export function PortfolioPoolBook({
       ),
     [positions],
   );
+
+  const withShare =
+    poolsWithShare ??
+    (positions ?? []).filter(
+      (p) => p.share_of_pool_pct != null && p.share_of_pool_pct > 0,
+    ).length;
+  const avgShare =
+    avgPoolSharePct ??
+    (() => {
+      const xs = (positions ?? []).filter(
+        (p) => p.share_of_pool_pct != null && p.share_of_pool_pct > 0,
+      );
+      if (!xs.length) return 0;
+      return (
+        xs.reduce((s, p) => s + (p.share_of_pool_pct ?? 0), 0) / xs.length
+      );
+    })();
 
   return (
     <div className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 px-4 py-4 sm:px-6">
@@ -194,33 +211,34 @@ export function PortfolioPoolBook({
 
       {lead}
 
-      <section className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-        <Stat label="Pools" value={String(poolCount)} />
-        <Stat label={amountLabel} value={fmtMoney(amountUsd)} />
+      <section className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
         <Stat
-          label="All-time generated"
+          label="Pools with share"
+          value={String(withShare)}
+          sub={`of ${poolCount} Index LPs`}
+        />
+        <Stat
+          label="Avg pool %"
+          value={fmtPct(avgShare)}
+          valueClass="text-emerald-300"
+          sub="wallet LP ÷ pool TVL"
+        />
+        <Stat label="LP in Index" value={fmtMoney(amountUsd)} />
+        <Stat
+          label="Fees generated"
           value={fmtMoney(fees.generated_usd)}
           valueClass="text-emerald-300"
-          sub={`${compoundPct}% compound / ${claimPct}% claim`}
-        />
-        <Stat
-          label="All-time claimed"
-          value={fmtMoney(fees.claimed_usd)}
-          sub={`${claimPct}% quote`}
-        />
-        <Stat
-          label="Compounded"
-          value={fmtMoney(fees.compounded_usd)}
-          sub={`${compoundPct}% into LP`}
         />
         <Stat label="Unclaimed" value={fmtMoney(fees.unclaimed_usd)} />
       </section>
 
       <section className="grid gap-4 rounded border border-zinc-800 bg-zinc-900/30 p-4 lg:grid-cols-2">
         <PieChart
-          title="Weights"
-          slices={composition}
+          title="Pool % by Index pool"
+          slices={sharePie}
           size={180}
+          formatValue={(n) => fmtPct(n)}
+          emptyLabel="0% everywhere"
           selectedId={selected}
           onSelect={(s) => {
             if (!s || s.id === "__other") {
@@ -234,6 +252,7 @@ export function PortfolioPoolBook({
           title="Fees by pool"
           slices={feePie}
           size={180}
+          emptyLabel="No fees"
           onSelect={(s) => {
             if (!s || s.id === "__other") return;
             setSelected(s.id.replace(/^fee-/, ""));
@@ -280,7 +299,7 @@ export function PortfolioPoolBook({
           })}
         </div>
         <span className="font-mono text-[11px] text-zinc-500">
-          {pools.length} pools
+          {pools.length} pools · sort by pool %
         </span>
       </div>
 
@@ -296,10 +315,26 @@ export function PortfolioPoolBook({
               </th>
               <th className="px-3 py-2 text-right">
                 <SortBtn
-                  label="Amount"
+                  label="Pool %"
+                  active={sortKey === "pool_pct"}
+                  dir={sortDir}
+                  onClick={() => toggleSort("pool_pct")}
+                />
+              </th>
+              <th className="px-3 py-2 text-right">
+                <SortBtn
+                  label="Your LP"
                   active={sortKey === "amount"}
                   dir={sortDir}
                   onClick={() => toggleSort("amount")}
+                />
+              </th>
+              <th className="px-3 py-2 text-right">
+                <SortBtn
+                  label="Pool TVL"
+                  active={sortKey === "tvl"}
+                  dir={sortDir}
+                  onClick={() => toggleSort("tvl")}
                 />
               </th>
               <th className="px-3 py-2 text-right">
@@ -308,22 +343,6 @@ export function PortfolioPoolBook({
                   active={sortKey === "generated"}
                   dir={sortDir}
                   onClick={() => toggleSort("generated")}
-                />
-              </th>
-              <th className="px-3 py-2 text-right">
-                <SortBtn
-                  label="Claimed"
-                  active={sortKey === "claimed"}
-                  dir={sortDir}
-                  onClick={() => toggleSort("claimed")}
-                />
-              </th>
-              <th className="px-3 py-2 text-right">
-                <SortBtn
-                  label="Compounded"
-                  active={sortKey === "compounded"}
-                  dir={sortDir}
-                  onClick={() => toggleSort("compounded")}
                 />
               </th>
               <th className="px-3 py-2 text-right">
@@ -385,17 +404,19 @@ export function PortfolioPoolBook({
                         {shortCa(p.pool_address)}
                       </div>
                     </td>
+                    <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-emerald-300/90">
+                      {p.share_of_pool_pct != null
+                        ? fmtPct(p.share_of_pool_pct)
+                        : "—"}
+                    </td>
                     <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-zinc-100">
                       {fmtMoney(p.position_value_usd)}
                     </td>
-                    <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-emerald-300/90">
-                      {fmtMoney(p.fees_generated_usd)}
+                    <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-zinc-400">
+                      {fmtMoney(p.pool_tvl_usd)}
                     </td>
                     <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-zinc-300">
-                      {fmtMoney(p.claimed_fees_usd)}
-                    </td>
-                    <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-zinc-400">
-                      {fmtMoney(p.compounded_fees_usd)}
+                      {fmtMoney(p.fees_generated_usd)}
                     </td>
                     <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-zinc-300">
                       {fmtMoney(p.unclaimed_fees_usd)}

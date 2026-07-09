@@ -185,6 +185,10 @@ export async function ingestControllerWallet(
     const balances = enriched.reduce((s, p) => s + p.position_value_usd, 0);
     const solPrice = open.sol_price || 0;
 
+    const withShare = enriched.filter(
+      (p) => (p.share_of_pool_pct ?? 0) > 0 || p.position_value_usd > 0,
+    );
+
     return {
       poolsUpserted: upserted,
       positionsSeen: enriched.length,
@@ -195,6 +199,8 @@ export async function ingestControllerWallet(
         fetched_at: new Date().toISOString(),
         total_positions: enriched.length,
         total_pools: seenPools.size,
+        pools_with_share: withShare.length,
+        avg_pool_share_pct: 0,
         sol_price: solPrice,
         totals: {
           balances,

@@ -2,10 +2,14 @@ import { ANSEM_MINT, PRIMARY_WALLET } from "./config";
 import { hasDatabase, query } from "./db";
 import { enrichPositions } from "./dexscreener";
 import { feeBreakdownForPosition, sumFeeBreakdowns } from "./fees";
-import { getOpenPositions, isAnsemIndexPool } from "./meteora";
+import {
+  getOpenPositions,
+  getPoolsTvlUsd,
+  isAnsemIndexPool,
+} from "./meteora";
 import type { PortfolioPayload, PortfolioTotals } from "./types";
 
-/** Open pool addresses currently on the Index book (DB). */
+/** Open Index pool addresses (DB). Used to scope wallet → Index only. */
 async function indexPoolAddresses(): Promise<Set<string> | null> {
   if (!hasDatabase()) return null;
   try {
@@ -45,9 +49,9 @@ function totalsFromPositions(
 }
 
 /**
- * Wallet ↔ Index interaction only:
- * open Meteora DAMM v2 TOKEN–ANSEM LPs (prefer pools already on the Index book).
- * No SPL holdings, no non-ANSEM pools.
+ * Wallet ↔ Index: only TOKEN–ANSEM DAMM v2 LPs on the Index list,
+ * with each row’s share_of_pool_pct = wallet LP / pool TVL.
+ * Not SPL holdings. Not non-ANSEM pools.
  */
 export async function buildPortfolio(
   wallet = PRIMARY_WALLET,
@@ -64,12 +68,24 @@ export async function buildPortfolio(
 
   const enriched = await enrichPositions(scoped, ANSEM_MINT);
 
+  // Pool % = this wallet’s LP USD ÷ full pool TVL
+  const tvlByPool = await getPoolsTvlUsd(
+    enriched.map((p) => p.pool_address),
+  );
+
+  for (const p of enriched) {
+    const tvl = tvlByPool.get(p.pool_address) ?? null;
+    p.pool_tvl_usd = tvl;
+    p.share_of_pool_pct =
+      tvl != null && tvl > 0
+        ? (p.position_value_usd / tvl) * 100
+        : null;
+  }
+
   enriched.sort(
     (a, b) =>
-      b.fees_generated_usd - a.fees_generated_usd ||
-      b.position_value_usd +
-        b.unclaimed_fees_usd -
-        (a.position_value_usd + a.unclaimed_fees_usd),
+      (b.share_of_pool_pct ?? 0) - (a.share_of_pool_pct ?? 0) ||
+      b.position_value_usd - a.position_value_usd,
   );
 
   const poolSet = new Set(enriched.map((p) => p.pool_address));
@@ -77,6 +93,14 @@ export async function buildPortfolio(
     scoped.map((p) => feeBreakdownForPosition(p)),
   );
   const solPrice = open.sol_price || 0;
+  const withShare = enriched.filter(
+    (p) => p.share_of_pool_pct != null && p.share_of_pool_pct > 0,
+  );
+  const avgShare =
+    withShare.length > 0
+      ? withShare.reduce((s, p) => s + (p.share_of_pool_pct ?? 0), 0) /
+        withShare.length
+      : 0;
 
   return {
     wallet,
@@ -84,6 +108,8 @@ export async function buildPortfolio(
     fetched_at: new Date().toISOString(),
     total_positions: enriched.length,
     total_pools: poolSet.size,
+    pools_with_share: withShare.length,
+    avg_pool_share_pct: avgShare,
     sol_price: solPrice,
     totals: totalsFromPositions(enriched, solPrice, feeSum),
     fee_totals: {
