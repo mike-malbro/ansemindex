@@ -299,13 +299,13 @@ export function PoolIndexBook({
     subtitle ??
     (isWalletMode
       ? "Same Index pool book. Your % = this pubkey’s LP ÷ pool TVL on each TOKEN–ANSEM pool."
-      : "DAMM v2 TOKEN–ANSEM pools. Share % weights the book. $AI creator fees buy ANSEM ($0 until live). Map wallets auto-ingest.");
+      : "DAMM v2 TOKEN–ANSEM pools. Share % weights the book. $ANSEMLP creator fees buy ANSEM ($0 until live). Map wallets auto-ingest.");
   const refreshText = refreshLabel ?? (isWalletMode ? "Refresh" : "Refresh index");
   const footNote =
     caption ??
     (isWalletMode
       ? "Exact same pool book as Index — Your % is this wallet’s share of each pool."
-      : "$AI creator fees buy ANSEM toward the 70% gate. Fees are $0 until live.");
+      : "$ANSEMLP creator fees buy ANSEM toward the 70% gate. Fees are $0 until live.");
 
   return (
     <div

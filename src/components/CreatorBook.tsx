@@ -16,7 +16,7 @@ import { PieChart, consolidateSlices, type PieSlice } from "./PieChart";
 import { HolderPanel } from "./HolderPanel";
 
 /**
- * $ANSEMINDEX creators — map wallets that seed the pool book.
+ * $ANSEMLP creators — map wallets that seed the pool book.
  * Click a creator → drill-down (pools, pies, holders). Not the index itself.
  */
 export function CreatorBook({ embedded = false }: { embedded?: boolean }) {
@@ -131,7 +131,7 @@ export function CreatorBook({ embedded = false }: { embedded?: boolean }) {
             ${token}
           </p>
           <h1 className="mt-1 font-mono text-lg font-semibold text-zinc-100">
-            $ANSEMINDEX creators
+            $ANSEMLP creators
           </h1>
           <p className="mt-1 max-w-xl font-mono text-[11px] text-zinc-500">
             Map wallets that seed TOKEN–ANSEM pools into the index. Click a

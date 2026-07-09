@@ -14,7 +14,7 @@ import {
 
 export const metadata = {
   title: `${INDEX_TICKER} · ${INDEX_NAME}`,
-  description: `${INDEX_NAME} (${INDEX_TICKER}) — TOKEN–ANSEM pools. $AI creator fees buy ANSEM ($0 until live).`,
+  description: `${INDEX_NAME} (${INDEX_TICKER}) — TOKEN–ANSEM pools. $ANSEMLP creator fees buy ANSEM ($0 until live).`,
 };
 
 export default function GuideHome() {

@@ -1,4 +1,4 @@
-# Production data model — ANSEM Index
+# Production data model — ANSEM LP INDEX
 
 This is the **honest** databasing plan. Tonight’s hub has a thin fee ledger.
 Production needs an **append-only event spine**, full tx coverage, dashboards

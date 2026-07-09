@@ -67,7 +67,7 @@ Every open TOKEN–ANSEM pool on the leader is a row the follower must match **b
 | **Fee tick** | Claim → sweep → buy ANSEM → gate / buybacks |
 | **Mirror tick** | Match leader entries / exits / size changes |
 
-Both run under Manual phase. Mirror is how you **control** the book; fee tick is how **$AI creator fees** (when live) buy ANSEM.
+Both run under Manual phase. Mirror is how you **control** the book; fee tick is how **$ANSEMLP creator fees** (when live) buy ANSEM.
 
 ### Safety
 
@@ -116,7 +116,7 @@ Hub never stores private keys. See [SECURITY.md](./SECURITY.md).
 ## Build order (ops)
 
 1. **Manual** — map wallets accurate; dry fee ticks + dry **mirror** plans (enter / trim / zap)  
-2. Set `ANSEM_DEST_WALLET` when $AI creator fees go live  
+2. Set `ANSEM_DEST_WALLET` when $ANSEMLP creator fees go live  
 3. Flip keeper live only with keys on keeper env — never on hub  
 4. Watch fee ledger + confirm zap-outs clear follower positions  
 5. **ML** — see-microtrader watches DEX for new fee entries; ops review before size  

@@ -77,7 +77,7 @@ export default function ManagePage() {
         </p>
         <h1 className="mt-1 text-xl font-semibold">Management</h1>
         <p className="mt-1 text-[11px] text-zinc-500">
-          Pubkeys only. $AI creator fees → buy ANSEM until{" "}
+          Pubkeys only. $ANSEMLP creator fees → buy ANSEM until{" "}
           {(ANSEM_TARGET_PCT * 100).toFixed(0)}% → buybacks · $
           {NODE_MIN_USD}/node floor. Fees $0 until live.
         </p>

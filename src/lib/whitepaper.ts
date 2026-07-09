@@ -1,5 +1,5 @@
 /**
- * ANSEM Index whitepaper — start list + parts nav.
+ * ANSEM LP INDEX whitepaper — start list + parts nav.
  * Thesis / fee chart live in thesis.ts (single source of truth).
  */
 
@@ -11,7 +11,7 @@ import {
 
 export const NODE_MIN_USD = THESIS_NODE_MIN;
 export const WHITEPAPER_VERSION = THESIS_WP_VERSION;
-export const WHITEPAPER_TITLE = "ANSEM Index Whitepaper";
+export const WHITEPAPER_TITLE = "ANSEM LP INDEX Whitepaper";
 
 export type FlowStep = {
   id: string;

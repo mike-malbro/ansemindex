@@ -55,7 +55,7 @@ export function HomeIndex() {
         <div>
           <h2 className="text-lg font-semibold">The index</h2>
           <p className="mt-1 text-xs text-zinc-500">
-            DAMM v2 TOKEN–ANSEM pools. $AI creator fees buy ANSEM ($0 until live).
+            DAMM v2 TOKEN–ANSEM pools. $ANSEMLP creator fees buy ANSEM ($0 until live).
           </p>
         </div>
         <Link href="/book" className="text-[11px] text-sky-400 hover:underline">
@@ -85,7 +85,7 @@ export function HomeIndex() {
             <Stat
               label="Treasury"
               value={fmtMoney(data.treasury_usd)}
-              sub="$AI fees → ANSEM · $0 until live"
+              sub="$ANSEMLP fees → ANSEM · $0 until live"
             />
           </div>
 

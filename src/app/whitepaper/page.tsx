@@ -194,7 +194,7 @@ export default function WhitepaperPage() {
         <Section id="flywheel">
           <h2 className="text-lg font-semibold">{FEE_CHART.title}</h2>
           <p className="mt-3 text-sm leading-relaxed text-zinc-400">
-            $AI creator fees buy ANSEM (fees $0 until live). While ANSEM is under{" "}
+            $ANSEMLP creator fees buy ANSEM (fees $0 until live). While ANSEM is under{" "}
             {pct}% of the program, send and seed. At {pct}% or more, the same
             fees go to all buybacks. Base fee on pools: {BASE_FEE_PCT}%.
           </p>

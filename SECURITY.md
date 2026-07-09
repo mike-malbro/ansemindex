@@ -1,4 +1,4 @@
-# Security — ANSEM Index hub
+# Security — ANSEM LP INDEX hub
 
 ## Hard rules
 

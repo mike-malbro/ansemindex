@@ -60,7 +60,7 @@ export function CreatorFeePanel() {
       setFeeWallet(dest);
       setSourceNote(
         dest
-          ? "$AI creator-fee destination — Your % on the Index pool book."
+          ? "$ANSEMLP creator-fee destination — Your % on the Index pool book."
           : "ANSEM_DEST_WALLET unset — showing Index book with 0% Your % until set.",
       );
     } finally {

@@ -56,10 +56,10 @@ export const CLAIM_FEE_BPS = 10_000 - COMPOUNDING_FEE_BPS;
 export const DEXSCREENER_BASE =
   process.env.DEXSCREENER_BASE ?? "https://api.dexscreener.com";
 
-/** Product name (words). Ticker is $AI — not the ANSEM pool quote mint. */
-export const INDEX_NAME = "ANSEM Index";
+/** Product name (words). Ticker is $ANSEMLP — not the ANSEM pool quote mint. */
+export const INDEX_NAME = "ANSEM LP INDEX";
 export const INDEX_TOKEN_SYMBOL =
-  process.env.NEXT_PUBLIC_INDEX_TOKEN_SYMBOL ?? "AI";
+  process.env.NEXT_PUBLIC_INDEX_TOKEN_SYMBOL ?? "ANSEMLP";
 /** Display ticker with $. */
 export const INDEX_TICKER = `$${INDEX_TOKEN_SYMBOL}`;
 export const INDEX_TOKEN_MINT =
