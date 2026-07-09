@@ -11,7 +11,7 @@ export type BookTab = "index" | "creator" | "wallet";
 const TABS: { id: BookTab; label: string; hint: string }[] = [
   { id: "index", label: "Index", hint: "Pool book" },
   { id: "creator", label: "Creator", hint: "Fee wallet" },
-  { id: "wallet", label: "Wallet", hint: "Top 10 · drill-down" },
+  { id: "wallet", label: "Wallet", hint: "Top % · breakdown" },
 ];
 
 function parseTab(raw: string | null): BookTab {
