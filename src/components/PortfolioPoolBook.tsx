@@ -99,14 +99,14 @@ export function PortfolioPoolBook({
   }
 
   const pools = useMemo(() => {
-    let rows = [...positions];
+    let rows = [...(positions ?? [])];
     const q = query.trim().toLowerCase();
     if (q) {
       rows = rows.filter(
         (p) =>
-          p.ticker.toLowerCase().includes(q) ||
+          (p.ticker ?? "").toLowerCase().includes(q) ||
           (p.pool_name ?? "").toLowerCase().includes(q) ||
-          p.pool_address.toLowerCase().includes(q),
+          (p.pool_address ?? "").toLowerCase().includes(q),
       );
     }
     const dir = sortDir === "asc" ? 1 : -1;
@@ -148,9 +148,9 @@ export function PortfolioPoolBook({
   const composition = useMemo(
     () =>
       consolidateSlices(
-        positions.map((p) => ({
+        (positions ?? []).map((p) => ({
           id: p.pool_address,
-          label: p.ticker,
+          label: p.ticker || "?",
           value: Number(p.position_value_usd) || 0,
         })),
         { maxSlices: 10, minPct: 1.2 },
@@ -161,9 +161,9 @@ export function PortfolioPoolBook({
   const feePie = useMemo(
     () =>
       consolidateSlices(
-        positions.map((p) => ({
+        (positions ?? []).map((p) => ({
           id: `fee-${p.pool_address}`,
-          label: p.ticker,
+          label: p.ticker || "?",
           value: Number(p.fees_generated_usd) || 0,
         })),
         { maxSlices: 10, minPct: 1.2 },
@@ -284,80 +284,88 @@ export function PortfolioPoolBook({
         </span>
       </div>
 
-      {pools.length === 0 ? (
-        <p className="py-8 font-mono text-xs text-zinc-500">{emptyMessage}</p>
-      ) : (
-        <div className="overflow-x-auto rounded border border-zinc-800">
-          <table className="w-full min-w-[980px] border-collapse text-left">
-            <thead className="bg-zinc-900/80">
-              <tr className="border-b border-zinc-800">
-                <th className="px-3 py-2 font-mono text-[10px] uppercase text-zinc-500">
-                  #
-                </th>
-                <th className="px-3 py-2 font-mono text-[10px] uppercase text-zinc-500">
-                  Pool
-                </th>
-                <th className="px-3 py-2 text-right">
+      <div className="overflow-x-auto rounded border border-zinc-800">
+        <table className="w-full min-w-[980px] border-collapse text-left">
+          <thead className="bg-zinc-900/80">
+            <tr className="border-b border-zinc-800">
+              <th className="px-3 py-2 font-mono text-[10px] uppercase text-zinc-500">
+                #
+              </th>
+              <th className="px-3 py-2 font-mono text-[10px] uppercase text-zinc-500">
+                Pool
+              </th>
+              <th className="px-3 py-2 text-right">
+                <SortBtn
+                  label="Amount"
+                  active={sortKey === "amount"}
+                  dir={sortDir}
+                  onClick={() => toggleSort("amount")}
+                />
+              </th>
+              <th className="px-3 py-2 text-right">
+                <SortBtn
+                  label="Generated"
+                  active={sortKey === "generated"}
+                  dir={sortDir}
+                  onClick={() => toggleSort("generated")}
+                />
+              </th>
+              <th className="px-3 py-2 text-right">
+                <SortBtn
+                  label="Claimed"
+                  active={sortKey === "claimed"}
+                  dir={sortDir}
+                  onClick={() => toggleSort("claimed")}
+                />
+              </th>
+              <th className="px-3 py-2 text-right">
+                <SortBtn
+                  label="Compounded"
+                  active={sortKey === "compounded"}
+                  dir={sortDir}
+                  onClick={() => toggleSort("compounded")}
+                />
+              </th>
+              <th className="px-3 py-2 text-right">
+                <SortBtn
+                  label="Unclaimed"
+                  active={sortKey === "unclaimed"}
+                  dir={sortDir}
+                  onClick={() => toggleSort("unclaimed")}
+                />
+              </th>
+              {HORIZONS.map((h) => (
+                <th key={h} className="px-2 py-2 text-right">
                   <SortBtn
-                    label="Amount"
-                    active={sortKey === "amount"}
+                    label={h}
+                    active={sortKey === h}
                     dir={sortDir}
-                    onClick={() => toggleSort("amount")}
+                    onClick={() => toggleSort(h)}
                   />
                 </th>
-                <th className="px-3 py-2 text-right">
-                  <SortBtn
-                    label="Generated"
-                    active={sortKey === "generated"}
-                    dir={sortDir}
-                    onClick={() => toggleSort("generated")}
-                  />
-                </th>
-                <th className="px-3 py-2 text-right">
-                  <SortBtn
-                    label="Claimed"
-                    active={sortKey === "claimed"}
-                    dir={sortDir}
-                    onClick={() => toggleSort("claimed")}
-                  />
-                </th>
-                <th className="px-3 py-2 text-right">
-                  <SortBtn
-                    label="Compounded"
-                    active={sortKey === "compounded"}
-                    dir={sortDir}
-                    onClick={() => toggleSort("compounded")}
-                  />
-                </th>
-                <th className="px-3 py-2 text-right">
-                  <SortBtn
-                    label="Unclaimed"
-                    active={sortKey === "unclaimed"}
-                    dir={sortDir}
-                    onClick={() => toggleSort("unclaimed")}
-                  />
-                </th>
-                {HORIZONS.map((h) => (
-                  <th key={h} className="px-2 py-2 text-right">
-                    <SortBtn
-                      label={h}
-                      active={sortKey === h}
-                      dir={sortDir}
-                      onClick={() => toggleSort(h)}
-                    />
-                  </th>
-                ))}
-                <th className="px-3 py-2 font-mono text-[10px] uppercase text-zinc-500">
-                  Links
-                </th>
+              ))}
+              <th className="px-3 py-2 font-mono text-[10px] uppercase text-zinc-500">
+                Links
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {pools.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={12}
+                  className="px-3 py-10 text-center font-mono text-xs text-zinc-500"
+                >
+                  {emptyMessage}
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {pools.map((p, i) => {
+            ) : (
+              pools.map((p, i) => {
                 const sel = selected === p.pool_address;
+                const tokenCa = p.constituent_token?.address;
                 return (
                   <tr
-                    key={p.position_address}
+                    key={p.position_address || `${p.pool_address}-${i}`}
                     onClick={() =>
                       setSelected(sel ? null : p.pool_address)
                     }
@@ -411,14 +419,16 @@ export function PortfolioPoolBook({
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="flex gap-2 font-mono text-[10px]">
-                        <a
-                          href={solscanToken(p.constituent_token.address)}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-sky-400 hover:underline"
-                        >
-                          Token
-                        </a>
+                        {tokenCa && (
+                          <a
+                            href={solscanToken(tokenCa)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-sky-400 hover:underline"
+                          >
+                            Token
+                          </a>
+                        )}
                         <a
                           href={meteoraPoolUrl(p.pool_address)}
                           target="_blank"
@@ -431,11 +441,11 @@ export function PortfolioPoolBook({
                     </td>
                   </tr>
                 );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
