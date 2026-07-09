@@ -102,8 +102,8 @@ export function CreatorFeePanel() {
       setFeeWallet(wallet);
       setSourceNote(
         dest
-          ? "ANSEM creator fee destination — fee buys land here toward the 70% gate."
-          : "ANSEM_DEST_WALLET unset — showing LP wallet until the creator fee dest is configured.",
+          ? "$AI creator-fee destination — bought ANSEM lands here toward the 70% gate."
+          : "ANSEM_DEST_WALLET unset — showing LP wallet until the $AI fee dest is configured.",
       );
 
       const [hRes, pRes] = await Promise.all([
@@ -169,12 +169,12 @@ export function CreatorFeePanel() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="font-mono text-lg font-semibold text-zinc-100">
-            Creator
+            Creator fees
           </h1>
           <p className="mt-1 max-w-xl font-mono text-[11px] text-zinc-500">
-            Creator fees buy ANSEM toward the {targetPct}% goal. Under{" "}
-            {targetPct}%: send / seed. At {targetPct}%+: all buybacks. Pubkeys
-            only.
+            $AI (ANSEM Index) creator fees buy ANSEM toward the {targetPct}%
+            goal. Fees are <span className="text-zinc-300">$0</span> until
+            live. Under {targetPct}%: send / seed. At {targetPct}%+: buybacks.
           </p>
         </div>
         <button
@@ -187,26 +187,26 @@ export function CreatorFeePanel() {
       </div>
 
       {/* 0 → 70% ANSEM goal — primary creator-fee story */}
-      <section className="rounded border border-amber-900/40 bg-amber-950/15 px-4 py-5 sm:px-6">
+      <section className="rounded border border-emerald-900/40 bg-emerald-950/15 px-4 py-5 sm:px-6">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="font-mono text-sm font-semibold text-amber-100/90">
-            ANSEM goal · 0 → {targetPct}%
+          <h2 className="font-mono text-sm font-semibold text-emerald-100/90">
+            $AI fees → ANSEM · 0 → {targetPct}%
           </h2>
           <span
             className={`font-mono text-[10px] uppercase tracking-wider ${
-              atGate ? "text-emerald-400" : "text-amber-200/80"
+              atGate ? "text-emerald-400" : "text-emerald-200/80"
             }`}
           >
-            {atGate ? "Buybacks" : "Build"}
+            {atGate ? "Buybacks" : "Build · fees $0"}
           </span>
         </div>
         <p className="mt-2 max-w-2xl font-mono text-[11px] leading-relaxed text-zinc-400">
-          A big slice of creator fees is sent into ANSEM until the index stack
-          hits {targetPct}% ANSEM. Then the same fee flow flips to 100%
-          buybacks.{" "}
+          When live, $AI creator fees buy ANSEM until the index stack hits{" "}
+          {targetPct}% ANSEM — then buybacks. Today creator fees are{" "}
+          <span className="text-zinc-200">$0</span>.{" "}
           <Link
             href="/whitepaper#flywheel"
-            className="text-sky-400 hover:underline"
+            className="text-emerald-400 hover:underline"
           >
             Fee chart →
           </Link>
@@ -225,7 +225,7 @@ export function CreatorFeePanel() {
           </div>
           <div className="relative h-3 overflow-hidden rounded-full bg-zinc-900">
             <div
-              className="absolute inset-y-0 left-0 rounded-full bg-amber-500/80 transition-all"
+              className="absolute inset-y-0 left-0 rounded-full bg-emerald-500/80 transition-all"
               style={{ width: `${progressToGate}%` }}
             />
             <div
@@ -256,7 +256,7 @@ export function CreatorFeePanel() {
       )}
 
       {!loading && !feeWallet && (
-        <p className="rounded border border-amber-900/40 bg-amber-950/15 px-4 py-4 font-mono text-xs text-zinc-400">
+        <p className="rounded border border-emerald-900/40 bg-emerald-950/15 px-4 py-4 font-mono text-xs text-zinc-400">
           {sourceNote || "Creator fee wallet not configured."}
         </p>
       )}
@@ -393,7 +393,7 @@ export function CreatorFeePanel() {
                             <td className="px-3 py-2 text-right font-mono text-xs text-zinc-300">
                               {fmtMoney(p.position_value_usd)}
                             </td>
-                            <td className="px-3 py-2 text-right font-mono text-xs text-amber-300/90">
+                            <td className="px-3 py-2 text-right font-mono text-xs text-emerald-300/90">
                               {fmtMoney(p.unclaimed_fees_usd)}
                             </td>
                             <td className="px-3 py-2 text-right font-mono text-[11px]">
@@ -450,7 +450,7 @@ export function CreatorFeePanel() {
                       <td className="px-3 py-2 font-mono text-[11px] text-zinc-400">
                         {new Date(s.sent_at).toLocaleString()}
                       </td>
-                      <td className="px-3 py-2 text-right font-mono text-xs text-amber-200/90">
+                      <td className="px-3 py-2 text-right font-mono text-xs text-emerald-200/90">
                         {fmtMoney(s.usd)}
                       </td>
                       <td className="px-3 py-2 text-right font-mono text-[10px] text-zinc-500">

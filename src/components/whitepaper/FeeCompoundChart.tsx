@@ -55,7 +55,7 @@ export function FeeCompoundChart({ className = "" }: { className?: string }) {
       </text>
       <path d="M300 62 H340" stroke="#52525b" strokeWidth="1.5" />
       {/* Reinvest */}
-      <rect x="340" y="40" width="100" height="44" rx="6" fill="#18181b" stroke="#f59e0b" />
+      <rect x="340" y="40" width="100" height="44" rx="6" fill="#18181b" stroke="#34d399" />
       <text
         x="390"
         y="58"

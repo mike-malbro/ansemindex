@@ -30,7 +30,7 @@ import { WHITEPAPER_TITLE } from "@/lib/whitepaper";
 export const metadata = {
   title: `${WHITEPAPER_TITLE} v${WHITEPAPER_VERSION} · ANSEM INDEX`,
   description:
-    "v1.2: pool index, fee flywheel, production databasing, GitHub collab. No keys on the hub.",
+    "v1.3: pool index, fee flywheel, production databasing, GitHub collab. No keys on the hub.",
 };
 
 function Section({
@@ -77,7 +77,7 @@ export default function WhitepaperPage() {
       <main className="mx-auto max-w-3xl px-4 sm:px-6">
         <Section id="cover">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded border border-amber-800/60 bg-amber-950/30 px-2 py-0.5 text-[10px] uppercase tracking-widest text-amber-200/90">
+            <span className="rounded border border-emerald-800/60 bg-emerald-950/30 px-2 py-0.5 text-[10px] uppercase tracking-widest text-emerald-200/90">
               v{WHITEPAPER_VERSION}
             </span>
             <span className="text-[10px] uppercase tracking-widest text-zinc-500">
@@ -193,7 +193,7 @@ export default function WhitepaperPage() {
         <Section id="flywheel">
           <h2 className="text-lg font-semibold">{FEE_CHART.title}</h2>
           <p className="mt-3 text-sm leading-relaxed text-zinc-400">
-            ANSEM creator fees buy index tokens by share. While ANSEM is under{" "}
+            $AI creator fees buy ANSEM (fees $0 until live). While ANSEM is under{" "}
             {pct}% of the program, send and seed. At {pct}% or more, the same
             fees go to all buybacks. Base fee on pools: {BASE_FEE_PCT}%.
           </p>
@@ -395,7 +395,7 @@ export default function WhitepaperPage() {
                 key={p.id}
                 className={`rounded border px-4 py-3 ${
                   p.status === "now"
-                    ? "border-amber-800/50 bg-amber-950/15"
+                    ? "border-emerald-800/50 bg-emerald-950/15"
                     : "border-zinc-800 bg-zinc-900/30"
                 }`}
               >

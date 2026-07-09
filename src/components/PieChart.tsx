@@ -11,7 +11,7 @@ export type PieSlice = {
 };
 
 const PALETTE = [
-  "#f59e0b",
+  "#34d399",
   "#38bdf8",
   "#a78bfa",
   "#34d399",

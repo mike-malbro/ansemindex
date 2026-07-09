@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { INDEX_NAME, INDEX_TICKER } from "@/lib/config";
 
 export const metadata: Metadata = {
-  title: "$ANSEMINDEX · Creator wallets",
-  description:
-    "Creator wallets seeding TOKEN–ANSEM pools. Click a creator to drill down. Public hub — no keys.",
+  title: `${INDEX_TICKER} · ${INDEX_NAME}`,
+  description: `${INDEX_NAME} (${INDEX_TICKER}) — TOKEN–ANSEM pool index. Creator fees buy ANSEM. Public hub — no keys.`,
 };
 
 export default function RootLayout({

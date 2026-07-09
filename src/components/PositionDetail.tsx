@@ -230,7 +230,7 @@ export function PositionDetail({
             <Metric
               label="Unclaimed fees"
               value={fmtMoney(position.unclaimed_fees_usd)}
-              className="text-amber-300"
+              className="text-emerald-300"
             />
             <Metric
               label="Your token"

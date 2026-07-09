@@ -52,7 +52,7 @@ export function PortfolioHeader({ data }: { data: PortfolioPayload }) {
           label="Unclaimed fees"
           value={fmtMoney(t.unclaimed_fees)}
           sub={`${t.unclaimed_fees_sol?.toFixed(4)} SOL`}
-          valueClass="text-amber-300"
+          valueClass="text-emerald-300"
         />
         <Stat
           label="Total deposits"

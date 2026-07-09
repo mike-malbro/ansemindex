@@ -129,7 +129,7 @@ export function CreatorBook({ embedded = false }: { embedded?: boolean }) {
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-widest text-amber-200/80">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-emerald-200/80">
             ${token}
           </p>
           <h1 className="mt-1 font-mono text-lg font-semibold text-zinc-100">
@@ -177,7 +177,7 @@ export function CreatorBook({ embedded = false }: { embedded?: boolean }) {
             <Stat
               label="Fees earned"
               value={fmtMoney(data.total_fees_earned_usd)}
-              valueClass="text-amber-300"
+              valueClass="text-emerald-300"
               sub={`${fmtMoney(data.total_claimed_fees_usd)} claimed`}
             />
             <Stat
@@ -230,10 +230,10 @@ export function CreatorBook({ embedded = false }: { embedded?: boolean }) {
                         });
                       }}
                       className={`cursor-pointer border-b border-zinc-800/80 transition hover:bg-zinc-900/70 ${
-                        sel ? "bg-amber-950/20" : ""
+                        sel ? "bg-emerald-950/20" : ""
                       }`}
                     >
-                      <td className="px-3 py-3 font-mono text-sm text-amber-100/90">
+                      <td className="px-3 py-3 font-mono text-sm text-emerald-100/90">
                         {c.label}
                       </td>
                       <td className="px-3 py-3 font-mono text-xs text-zinc-300">
@@ -245,7 +245,7 @@ export function CreatorBook({ embedded = false }: { embedded?: boolean }) {
                       <td className="px-3 py-3 text-right font-mono text-sm tabular-nums text-zinc-100">
                         {fmtMoney(c.position_usd)}
                       </td>
-                      <td className="px-3 py-3 text-right font-mono text-sm tabular-nums text-amber-300/90">
+                      <td className="px-3 py-3 text-right font-mono text-sm tabular-nums text-emerald-300/90">
                         {fmtMoney(c.fees_earned_usd)}
                       </td>
                       <td className="px-3 py-3 text-right font-mono text-sm tabular-nums text-zinc-400">
@@ -388,7 +388,7 @@ export function CreatorBook({ embedded = false }: { embedded?: boolean }) {
                             <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-zinc-100">
                               {fmtMoney(p.position_value_usd)}
                             </td>
-                            <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-amber-300/90">
+                            <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-emerald-300/90">
                               {fmtMoney(p.unclaimed_fees_usd)}
                             </td>
                             <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-zinc-300">
@@ -498,7 +498,7 @@ function MiniStat({
       </div>
       <div
         className={`font-mono text-sm tabular-nums ${
-          accent ? "text-amber-300" : "text-zinc-200"
+          accent ? "text-emerald-300" : "text-zinc-200"
         }`}
       >
         {value}

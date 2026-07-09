@@ -25,7 +25,7 @@ export function FeeFlywheelChart({ className = "" }: { className?: string }) {
             height="56"
             rx="8"
             fill={i === 3 ? "#1c1917" : "#18181b"}
-            stroke={i === 3 ? "#f59e0b" : "#3f3f46"}
+            stroke={i === 3 ? "#34d399" : "#3f3f46"}
             strokeWidth="1.5"
           />
           {box.label.split("\n").map((line, li) => (

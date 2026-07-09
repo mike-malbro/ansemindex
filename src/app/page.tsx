@@ -2,59 +2,58 @@ import Link from "next/link";
 import { SiteNav } from "@/components/SiteNav";
 import { HomeIndex } from "@/components/HomeIndex";
 import { FeeFlywheelChart } from "@/components/whitepaper/FeeFlywheelChart";
+import { INDEX_NAME, INDEX_TICKER } from "@/lib/config";
 import {
   ANSEM_TARGET_PCT,
   BASE_FEE_PCT,
   HOW_TO_GUIDE,
   PRINCIPLES,
   ROADMAP_PHASES,
-  WHITEPAPER_VERSION,
 } from "@/lib/thesis";
 
 export const metadata = {
-  title: "ANSEM Index · Pool list",
-  description:
-    "DAMM v2 TOKEN–ANSEM pools. ANSEM creator fees buy by proportional share. Nodes optional.",
+  title: `${INDEX_TICKER} · ${INDEX_NAME}`,
+  description: `${INDEX_NAME} (${INDEX_TICKER}) — TOKEN–ANSEM pools. $AI creator fees buy ANSEM ($0 until live).`,
 };
 
 export default function GuideHome() {
+  const pct = Math.round(ANSEM_TARGET_PCT * 100);
   return (
     <div className="min-h-screen bg-zinc-950 font-mono text-zinc-100">
-      <SiteNav current="/" />
+      <SiteNav />
 
       <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-        <p className="text-[10px] uppercase tracking-widest text-zinc-500">
-          Public hub · no keys · auto map wallets
+        <p className="text-[10px] uppercase tracking-widest text-emerald-400/90">
+          {INDEX_TICKER} · public hub · no keys
         </p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-          ANSEM Index
+          {INDEX_NAME}
         </h1>
         <p className="mt-3 max-w-xl text-sm leading-relaxed text-zinc-400">
-          The index is the list of Meteora DAMM v2 TOKEN–ANSEM pools. ANSEM
-          creator fees buy those tokens by Share %. Map wallets auto-ingest —
-          including every tracked pubkey. Nodes invest at their own will. DAMM
-          v2 at {BASE_FEE_PCT}% · flywheel to{" "}
-          {(ANSEM_TARGET_PCT * 100).toFixed(0)}% ANSEM.
+          The index is the list of Meteora DAMM v2 TOKEN–ANSEM pools.{" "}
+          {INDEX_TICKER} creator fees — when live — buy ANSEM toward the {pct}%
+          gate (today: <span className="text-zinc-200">$0</span>). Map wallets
+          auto-ingest. DAMM v2 at {BASE_FEE_PCT}%.
         </p>
 
         <div className="mt-6 flex flex-wrap gap-3">
           <Link
-            href="#index"
-            className="inline-flex items-center rounded border border-amber-800/50 bg-amber-950/20 px-4 py-2.5 text-sm text-amber-100/90 transition hover:border-amber-700/60"
+            href="/book"
+            className="inline-flex items-center rounded border border-emerald-800/50 bg-emerald-950/20 px-4 py-2.5 text-sm text-emerald-100/90 transition hover:border-emerald-700/60"
           >
-            View pools ↓
+            Index →
           </Link>
           <Link
-            href="/launchpad"
+            href="/book?tab=creator"
             className="inline-flex items-center rounded border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm text-zinc-200 transition hover:border-zinc-500"
           >
-            Launchpad →
+            Creator fees →
           </Link>
           <Link
-            href="/whitepaper"
+            href="/faq"
             className="inline-flex items-center rounded border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm text-zinc-200 transition hover:border-zinc-500"
           >
-            Whitepaper v{WHITEPAPER_VERSION} →
+            FAQ →
           </Link>
         </div>
 
@@ -63,15 +62,15 @@ export default function GuideHome() {
         <section id="fee-chart" className="mt-12">
           <h2 className="text-sm font-semibold text-zinc-200">Fee chart</h2>
           <p className="mt-1 text-[11px] text-zinc-500">
-            ANSEM creator fees → buy index by share →{" "}
-            {(ANSEM_TARGET_PCT * 100).toFixed(0)}% gate → buybacks.
+            {INDEX_TICKER} creator fees → buy ANSEM → {pct}% gate → buybacks
+            ($0 until live).
           </p>
           <div className="mt-4">
             <FeeFlywheelChart />
           </div>
           <Link
             href="/whitepaper#flywheel"
-            className="mt-3 inline-block text-[11px] text-sky-400 hover:underline"
+            className="mt-3 inline-block text-[11px] text-emerald-400 hover:underline"
           >
             Full chart →
           </Link>
@@ -97,7 +96,7 @@ export default function GuideHome() {
                   </p>
                   <Link
                     href={step.href}
-                    className="mt-2 inline-block text-[11px] text-sky-400 hover:underline"
+                    className="mt-2 inline-block text-[11px] text-emerald-400 hover:underline"
                   >
                     {step.cta} →
                   </Link>
@@ -112,7 +111,7 @@ export default function GuideHome() {
             <h2 className="text-lg font-semibold">Roadmap</h2>
             <Link
               href="/roadmap"
-              className="text-[11px] text-sky-400 hover:underline"
+              className="text-[11px] text-emerald-400 hover:underline"
             >
               Full roadmap →
             </Link>
@@ -123,7 +122,7 @@ export default function GuideHome() {
                 key={p.id}
                 className={`min-w-[120px] flex-1 rounded border px-3 py-3 ${
                   p.status === "now"
-                    ? "border-amber-800/50 bg-amber-950/20"
+                    ? "border-emerald-800/50 bg-emerald-950/20"
                     : "border-zinc-800 bg-zinc-900/30"
                 }`}
               >

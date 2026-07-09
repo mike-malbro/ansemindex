@@ -119,8 +119,8 @@ export function IndexDashboard() {
       {data && (
         <>
           <section className="grid gap-2 sm:grid-cols-2 lg:grid-cols-6">
-            <div className="rounded border border-amber-900/40 bg-amber-950/15 px-3 py-3 sm:col-span-2 lg:col-span-1">
-              <div className="font-mono text-[10px] uppercase tracking-wider text-amber-200/70">
+            <div className="rounded border border-emerald-900/40 bg-emerald-950/15 px-3 py-3 sm:col-span-2 lg:col-span-1">
+              <div className="font-mono text-[10px] uppercase tracking-wider text-emerald-200/70">
                 wallet(0)
               </div>
               <a
@@ -142,12 +142,12 @@ export function IndexDashboard() {
               label="Fees earned"
               value={fmtMoney(data.total_fees_earned_usd)}
               sub={`${fmtMoney(data.total_claimed_fees_usd)} claimed`}
-              valueClass="text-amber-300"
+              valueClass="text-emerald-300"
             />
             <Stat
               label="Unclaimed"
               value={fmtMoney(data.total_fees_usd)}
-              valueClass="text-amber-200/90"
+              valueClass="text-emerald-200/90"
             />
             <Stat
               label="Our treasury"
@@ -232,7 +232,7 @@ export function IndexDashboard() {
                       <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-zinc-100">
                         {fmtMoney(p.position_value_usd)}
                       </td>
-                      <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-amber-300/90">
+                      <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-emerald-300/90">
                         {fmtMoney(p.unclaimed_fees_usd)}
                       </td>
                       <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-zinc-300">

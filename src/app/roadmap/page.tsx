@@ -39,7 +39,7 @@ export default function RoadmapPage() {
               href={`#phase-${p.id}`}
               className={`min-w-[88px] flex-1 rounded border px-2 py-3 text-center transition hover:border-zinc-600 ${
                 p.status === "now"
-                  ? "border-amber-800/60 bg-amber-950/25"
+                  ? "border-emerald-800/60 bg-emerald-950/25"
                   : p.status === "next"
                     ? "border-sky-900/50 bg-sky-950/20"
                     : "border-zinc-800 bg-zinc-900/30"
@@ -69,7 +69,7 @@ export default function RoadmapPage() {
               <span
                 className={`absolute -left-[1.55rem] top-1 h-3 w-3 rounded-full border-2 ${
                   p.status === "now"
-                    ? "border-amber-500 bg-amber-950"
+                    ? "border-emerald-500 bg-emerald-950"
                     : p.status === "next"
                       ? "border-sky-500 bg-sky-950"
                       : "border-zinc-600 bg-zinc-950"
@@ -82,7 +82,7 @@ export default function RoadmapPage() {
                 <span
                   className={`text-[10px] uppercase tracking-wider ${
                     p.status === "now"
-                      ? "text-amber-300"
+                      ? "text-emerald-300"
                       : p.status === "next"
                         ? "text-sky-400"
                         : "text-zinc-500"

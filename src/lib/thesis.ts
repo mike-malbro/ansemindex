@@ -3,21 +3,21 @@
  * Public hub only — no keys. Paper before machinery.
  */
 
-export const WHITEPAPER_VERSION = "1.2";
+export const WHITEPAPER_VERSION = "1.3";
 export const WHITEPAPER_UPDATED_NOTE =
-  "This paper will update as we ship. v1.2 adds production databasing + collab.";
+  "This paper will update as we ship. v1.3: ticker $AI · ANSEM Index · $AI creator fees buy ANSEM ($0 until live).";
 
 export const ANSEM_TARGET_PCT = 0.7;
 export const BASE_FEE_PCT = 1;
 export const NODE_MIN_USD = 1;
 
 export const MISSION =
-  "The ANSEM Index is the list of Meteora DAMM v2 TOKEN–ANSEM pools. ANSEM creator fees buy those tokens by proportional share. Anyone can run an ANSEM node and invest at their own will. A launchpad will mint new tokens into the index. This public hub never holds keys.";
+  "ANSEM Index (ticker $AI) is the list of Meteora DAMM v2 TOKEN–ANSEM pools. $AI creator fees — when live — buy ANSEM toward the 70% gate, then buybacks. Today those fees are $0. Anyone can run a node at their own will. This public hub never holds keys.";
 
 export const PRINCIPLES = [
   "Public hub never holds private keys — Postgres stores pubkeys and pool data only.",
   "The index is the DAMM v2 pool list — not a wallet list.",
-  "ANSEM creator fees buy index tokens by proportional share.",
+  "$AI (ANSEM Index) creator fees buy ANSEM toward 70% — $0 until live.",
   "Map wallets are how we discover pools — they are not the index.",
   "ANSEM nodes invest at their own will — copy the method, not the keys.",
   "Production data is append-only: every fee claim, buy, send, and LP change gets a row.",
@@ -46,11 +46,11 @@ export const EXPLAIN_POOL = {
 
 export const EXPLAIN_FEE_1PCT = {
   title: "1% fees and compounding",
-  body: `TOKEN–ANSEM pools default to a ${BASE_FEE_PCT}% base fee on swaps. That fee goes to LPs. Separately, ANSEM creator fees buy the tokens in the index by share. We do not burn fees.`,
+  body: `TOKEN–ANSEM pools default to a ${BASE_FEE_PCT}% base fee on swaps. That fee goes to LPs. Separately, $AI (ANSEM Index) creator fees — when live — buy ANSEM. Today those creator fees are $0. We do not burn fees.`,
   bullets: [
     `${BASE_FEE_PCT}% of swap volume can accrue to LPs`,
-    "ANSEM creator fees buy the index basket",
-    "Fee tier can change later if the book needs it",
+    "$AI creator fees buy ANSEM (not the other way around)",
+    "Creator fees are $0 until the $AI fee path is live",
   ],
 } as const;
 
@@ -66,11 +66,11 @@ export const EXPLAIN_INDEX = {
 
 export const EXPLAIN_PRO_RATA = {
   title: "Proportional shares",
-  body: "Each pool’s weight is its share of total index LP value: share_pct = pool_value / sum(pool_values). When ANSEM creator fees buy the index, buys split by those weights so larger pools get a larger slice of the fee flow.",
+  body: "Each pool’s weight is its share of total index LP value: share_pct = pool_value / sum(pool_values). Share % weights the pool book. When $AI creator fees buy ANSEM, the 70% gate uses index ANSEM share — fees are $0 until live.",
   bullets: [
     "Weight = pool amount ÷ total index amount",
     "Shown as Share % and the Index weights pie",
-    "Fee buys follow the same weights",
+    "$AI creator fees buy ANSEM toward the gate",
   ],
 } as const;
 
@@ -177,13 +177,13 @@ export const THESIS = {
 } as const;
 
 export const FEE_CHART = {
-  title: "Fee chart — ANSEM creator fees buy the index",
+  title: "Fee chart — $AI creator fees buy ANSEM",
   targetPct: ANSEM_TARGET_PCT,
   phases: [
     {
       id: "build",
       label: "Build to 70%",
-      rule: "Claim fees → buy index tokens (and ANSEM) by share → seed while ANSEM is under 70% of the program stack.",
+      rule: "$AI creator fees (when live) → buy ANSEM → seed while ANSEM is under 70% of the program stack. Fees are $0 today.",
     },
     {
       id: "buybacks",
@@ -194,13 +194,13 @@ export const FEE_CHART = {
   steps: [
     {
       n: 1,
-      title: "Collect creator fees",
-      body: "ANSEM creator fees (and LP fees on your node) accrue on-chain. You claim on your node — not on this hub.",
+      title: "Collect $AI creator fees",
+      body: "$AI (ANSEM Index) creator fees accrue when live — $0 today. LP fees on your node are separate. Claim on your node — not on this hub.",
     },
     {
       n: 2,
-      title: "Buy by proportional share",
-      body: "Spend fees across index tokens weighted by each pool’s share of the index.",
+      title: "Buy ANSEM",
+      body: "Spend $AI creator fees to buy ANSEM toward the 70% gate (not “buy the index basket with ANSEM fees”).",
     },
     {
       n: 3,
@@ -256,7 +256,7 @@ export const HOW_TO_GUIDE = [
     id: "fee-chart",
     n: 2,
     title: "Learn the fee chart",
-    body: "ANSEM creator fees → buy index by share → 70% gate → buybacks.",
+    body: "$AI creator fees → buy ANSEM → 70% gate → buybacks ($0 until live).",
     href: "/whitepaper#flywheel",
     cta: "Fee chart",
   },

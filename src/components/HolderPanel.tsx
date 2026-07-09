@@ -184,7 +184,7 @@ export function HolderPanel({ pool, onClose }: Props) {
                     <span className="w-5 text-zinc-600">{h.rank}</span>
                     <span
                       className={
-                        h.isController ? "text-amber-300" : "text-zinc-300"
+                        h.isController ? "text-emerald-300" : "text-zinc-300"
                       }
                     >
                       {shortCa(h.owner, 4, 4)}

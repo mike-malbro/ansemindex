@@ -13,7 +13,7 @@ export default function LaunchpadPage() {
     <div className="min-h-screen bg-zinc-950 font-mono text-zinc-100">
       <SiteNav current="/launchpad" />
       <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-        <p className="text-[10px] uppercase tracking-widest text-amber-200/80">
+        <p className="text-[10px] uppercase tracking-widest text-emerald-200/80">
           Coming next
         </p>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
@@ -33,8 +33,8 @@ export default function LaunchpadPage() {
           ))}
         </ul>
 
-        <div className="mt-8 rounded border border-amber-900/40 bg-amber-950/15 px-4 py-4 text-xs text-zinc-400">
-          <p className="font-semibold text-amber-100/90">Security</p>
+        <div className="mt-8 rounded border border-emerald-900/40 bg-emerald-950/15 px-4 py-4 text-xs text-zinc-400">
+          <p className="font-semibold text-emerald-100/90">Security</p>
           <p className="mt-2">
             The public hub and Postgres never hold private keys — only pubkeys,
             pool addresses, and reports. Launch signing (when live) stays in

@@ -44,9 +44,12 @@ export const METEORA_DAMM_V2_BASE =
 export const DEXSCREENER_BASE =
   process.env.DEXSCREENER_BASE ?? "https://api.dexscreener.com";
 
-export const INDEX_NAME = "ANSEM INDEX";
+/** Product name (words). Ticker is $AI — not the ANSEM pool quote mint. */
+export const INDEX_NAME = "ANSEM Index";
 export const INDEX_TOKEN_SYMBOL =
-  process.env.NEXT_PUBLIC_INDEX_TOKEN_SYMBOL ?? "ANSEM";
+  process.env.NEXT_PUBLIC_INDEX_TOKEN_SYMBOL ?? "AI";
+/** Display ticker with $. */
+export const INDEX_TICKER = `$${INDEX_TOKEN_SYMBOL}`;
 export const INDEX_TOKEN_MINT =
   process.env.NEXT_PUBLIC_INDEX_TOKEN_MINT ??
   process.env.INDEX_TOKEN_MINT ??

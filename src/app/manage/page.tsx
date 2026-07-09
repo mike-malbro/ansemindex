@@ -91,7 +91,7 @@ export default function ManagePage() {
         <WalletRow label="ANSEM dest (creator fee)" value={c?.ansemDestWallet} />
         <div className="pt-2 text-[11px] text-zinc-500">
           Mode:{" "}
-          <span className={c?.live ? "text-emerald-400" : "text-amber-300"}>
+          <span className={c?.live ? "text-emerald-400" : "text-emerald-300"}>
             {c?.live ? "LIVE" : "DRY RUN"}
           </span>
           {c?.note && <span className="ml-2">· {c.note}</span>}
@@ -168,7 +168,7 @@ export default function ManagePage() {
           type="button"
           disabled={busy}
           onClick={runTick}
-          className="rounded border border-amber-700/60 bg-amber-950/40 px-4 py-2 text-xs text-amber-200 hover:bg-amber-900/40 disabled:opacity-50"
+          className="rounded border border-emerald-700/60 bg-emerald-950/40 px-4 py-2 text-xs text-emerald-200 hover:bg-emerald-900/40 disabled:opacity-50"
         >
           {busy ? "Running…" : "Run dry tick"}
         </button>

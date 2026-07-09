@@ -33,7 +33,7 @@ export function KeeperPreview({
         <h2 className="font-mono text-sm font-semibold text-zinc-200">
           Management (preview)
         </h2>
-        <span className="rounded bg-zinc-800 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-amber-300">
+        <span className="rounded bg-zinc-800 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-emerald-300">
           {plan.dry_run ? "DRY RUN" : "LIVE"} ·{" "}
           {plan.has_key ? "key present" : "no key"}
         </span>
@@ -54,7 +54,7 @@ export function KeeperPreview({
         </div>
         <div className="rounded border border-zinc-800 bg-zinc-950/50 px-3 py-2">
           <div className="font-mono text-[10px] text-zinc-500">Fees to claim</div>
-          <div className="font-mono text-lg text-amber-300">{fmtMoney(totalFees)}</div>
+          <div className="font-mono text-lg text-emerald-300">{fmtMoney(totalFees)}</div>
         </div>
         <div className="rounded border border-zinc-800 bg-zinc-950/50 px-3 py-2">
           <div className="font-mono text-[10px] text-zinc-500">Status</div>

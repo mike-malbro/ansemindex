@@ -115,7 +115,7 @@ export function PoolIndexBook({ embedded = false }: { embedded?: boolean }) {
           </h1>
           <p className="mt-1 max-w-xl font-mono text-[11px] text-zinc-500">
             DAMM v2 TOKEN–ANSEM pools. Share % = proportional weight for ANSEM
-            creator-fee buys. Map wallets auto-ingest — no manual pick.
+            $AI creator fees buy ANSEM ($0 until live). Map wallets auto-ingest.
           </p>
         </div>
         <button
@@ -153,7 +153,7 @@ export function PoolIndexBook({ embedded = false }: { embedded?: boolean }) {
             <Stat
               label="Fees earned"
               value={fmtMoney(data.total_fees_earned_usd)}
-              valueClass="text-amber-300"
+              valueClass="text-emerald-300"
               sub={`${fmtMoney(data.total_claimed_fees_usd)} claimed`}
             />
             <Stat
@@ -163,7 +163,7 @@ export function PoolIndexBook({ embedded = false }: { embedded?: boolean }) {
             <Stat
               label="Treasury"
               value={fmtMoney(data.treasury_usd)}
-              sub="$0 until creator fees"
+              sub="$0 until $AI creator fees live"
             />
           </section>
 
@@ -197,7 +197,7 @@ export function PoolIndexBook({ embedded = false }: { embedded?: boolean }) {
             />
           </section>
           <p className="font-mono text-[10px] text-zinc-600">
-            ANSEM creator fees buy these tokens in proportion to Index weights.
+            $AI creator fees buy ANSEM toward the 70% gate. Fees are $0 until live.
           </p>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -268,13 +268,13 @@ export function PoolIndexBook({ embedded = false }: { embedded?: boolean }) {
                           {shortCa(p.pool_address)}
                         </div>
                       </td>
-                      <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-amber-200/90">
+                      <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-emerald-200/90">
                         {(p.share_pct ?? 0).toFixed(1)}%
                       </td>
                       <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-zinc-100">
                         {fmtMoney(p.position_value_usd)}
                       </td>
-                      <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-amber-300/90">
+                      <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-emerald-300/90">
                         {fmtMoney(p.unclaimed_fees_usd)}
                       </td>
                       <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-zinc-300">

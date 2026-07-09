@@ -55,7 +55,7 @@ export function HomeIndex() {
         <div>
           <h2 className="text-lg font-semibold">The index</h2>
           <p className="mt-1 text-xs text-zinc-500">
-            DAMM v2 TOKEN–ANSEM pools. ANSEM creator fees buy by Share %.
+            DAMM v2 TOKEN–ANSEM pools. $AI creator fees buy ANSEM ($0 until live).
           </p>
         </div>
         <Link href="/book" className="text-[11px] text-sky-400 hover:underline">
@@ -79,12 +79,12 @@ export function HomeIndex() {
             <Stat
               label="Fees earned"
               value={fmtMoney(data.total_fees_earned_usd)}
-              valueClass="text-amber-300"
+              valueClass="text-emerald-300"
             />
             <Stat
               label="Treasury"
               value={fmtMoney(data.treasury_usd)}
-              sub="still $0"
+              sub="$AI fees → ANSEM · $0 until live"
             />
           </div>
 
@@ -140,13 +140,13 @@ export function HomeIndex() {
                         {shortCa(p.pool_address)}
                       </div>
                     </td>
-                    <td className="px-3 py-2.5 text-right text-sm tabular-nums text-amber-200/90">
+                    <td className="px-3 py-2.5 text-right text-sm tabular-nums text-emerald-200/90">
                       {(p.share_pct ?? 0).toFixed(1)}%
                     </td>
                     <td className="px-3 py-2.5 text-right text-sm tabular-nums text-zinc-100">
                       {fmtMoney(p.position_value_usd)}
                     </td>
-                    <td className="px-3 py-2.5 text-right text-sm tabular-nums text-amber-300/90">
+                    <td className="px-3 py-2.5 text-right text-sm tabular-nums text-emerald-300/90">
                       {fmtMoney(
                         (p.unclaimed_fees_usd || 0) + (p.claimed_fees_usd || 0),
                       )}

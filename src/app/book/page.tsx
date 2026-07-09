@@ -1,24 +1,25 @@
 import { BookTabs } from "@/components/BookTabs";
 import { SiteNav } from "@/components/SiteNav";
+import { INDEX_NAME, INDEX_TICKER } from "@/lib/config";
 
 export const metadata = {
-  title: "Index · ANSEM INDEX",
-  description:
-    "Index pools, creator fee wallet, and paste-wallet portfolio lookup. Pubkeys only.",
+  title: `Index · ${INDEX_TICKER}`,
+  description: `${INDEX_NAME} pool book, creator fees, wallet lookup. Pubkeys only.`,
 };
 
 export default function BookPage() {
   return (
     <div className="flex min-h-screen flex-col bg-zinc-950 text-zinc-100">
-      <SiteNav current="/book" />
+      <SiteNav />
       <div className="border-b border-zinc-800 bg-zinc-900/40 px-4 py-2 sm:px-6">
         <p className="mx-auto max-w-[1400px] font-mono text-[11px] text-zinc-500">
-          <span className="text-zinc-300">Index</span> = pool book ·{" "}
-          <span className="text-zinc-300">Creator</span> = fee wallet ·{" "}
-          <span className="text-zinc-300">Wallet</span> = paste pubkey →
-          portfolio. No keys.{" "}
-          <a href="/whitepaper#index" className="text-sky-400 hover:underline">
-            How it works
+          <span className="text-emerald-400">{INDEX_TICKER}</span>{" "}
+          <span className="text-zinc-300">{INDEX_NAME}</span>
+          {" · "}
+          Index = pools · Creator fees = $0 until live (buy ANSEM) · Wallet =
+          paste pubkey. No keys.{" "}
+          <a href="/faq" className="text-emerald-400 hover:underline">
+            FAQ
           </a>
         </p>
       </div>

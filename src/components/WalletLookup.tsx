@@ -159,7 +159,7 @@ export function WalletLookup() {
         <button
           type="submit"
           disabled={loading}
-          className="rounded border border-amber-800/50 bg-amber-950/30 px-4 py-2.5 font-mono text-sm text-amber-100/90 transition hover:border-amber-700/60 disabled:opacity-50"
+          className="rounded border border-emerald-800/50 bg-emerald-950/30 px-4 py-2.5 font-mono text-sm text-emerald-100/90 transition hover:border-emerald-700/60 disabled:opacity-50"
         >
           {loading ? "Looking up…" : "Look up"}
         </button>
@@ -304,7 +304,7 @@ export function WalletLookup() {
                         <td className="px-3 py-2 text-right font-mono text-xs text-zinc-300">
                           {fmtMoney(p.position_value_usd)}
                         </td>
-                        <td className="px-3 py-2 text-right font-mono text-xs text-amber-300/90">
+                        <td className="px-3 py-2 text-right font-mono text-xs text-emerald-300/90">
                           {fmtMoney(p.unclaimed_fees_usd)}
                         </td>
                         <td className="px-3 py-2 text-right font-mono text-[11px]">

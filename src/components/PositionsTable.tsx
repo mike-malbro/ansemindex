@@ -160,7 +160,7 @@ export function PositionsTable({
                 <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-zinc-100">
                   {fmtMoney(p.position_value_usd)}
                 </td>
-                <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-amber-300/90">
+                <td className="px-3 py-2.5 text-right font-mono text-sm tabular-nums text-emerald-300/90">
                   {fmtMoney(p.unclaimed_fees_usd)}
                 </td>
                 <td
