@@ -387,7 +387,7 @@ export default function WhitepaperPage() {
         <Section id="roadmap">
           <h2 className="text-lg font-semibold">Roadmap</h2>
           <p className="mt-2 text-sm text-zinc-400">
-            Index → Flywheel ($AI → ANSEM) → Launchpad → Network. Rules can
+            Index → Flywheel → ML watch (DEX fee entries) → Continue. Rules can
             shift as data arrives.
           </p>
           <ol className="mt-6 space-y-3">

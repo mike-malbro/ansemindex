@@ -6,7 +6,7 @@ import { ANSEM_TARGET_PCT, ROADMAP_PHASES } from "@/lib/thesis";
 
 export const metadata = {
   title: `Roadmap · ${INDEX_TICKER}`,
-  description: `${INDEX_NAME}: Index → Flywheel ($AI→ANSEM) → Launchpad → Network.`,
+  description: `${INDEX_NAME}: Manual → Flywheel → ML watch → Continue.`,
 };
 
 export default function RoadmapPage() {
@@ -20,11 +20,12 @@ export default function RoadmapPage() {
           {INDEX_TICKER} roadmap
         </p>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">
-          Four steps
+          Manual → ML → continue
         </h1>
         <p className="mt-3 max-w-xl text-sm leading-relaxed text-zinc-400">
-          Index is live. Next: turn on {INDEX_TICKER} creator fees to buy ANSEM
-          to {pct}%. Then launchpad. Network later. No keys on the hub.
+          First we run it by hand — you steer, the bot follows the book. Then
+          we load ML (see-microtrader) to watch the DEX for new fee entries.
+          Same flywheel to {pct}% ANSEM. The process continues.
         </p>
 
         <ol className="mt-10 space-y-4">

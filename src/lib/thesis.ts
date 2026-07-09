@@ -280,14 +280,14 @@ export const HOW_TO_GUIDE = [
 
 export const ROADMAP_PHASES = [
   {
-    id: "index",
+    id: "manual",
     phase: 1,
-    title: "Index",
+    title: "Manual",
     status: "now" as const,
-    outcome: "Live TOKEN–ANSEM pool book.",
+    outcome: "You steer; the bot follows the book.",
     detail:
-      "Share %, map-wallet ingest, Index · Creator fees · Wallet. Fee ledger started.",
-    ships: ["Pool book", "Multi map wallets", "$AI brand + green UI"],
+      "Live TOKEN–ANSEM index, map-wallet ingest, fee ledger. Keeper mirrors holdings — clear manual control while we learn the loop.",
+    ships: ["Pool book + Share %", "Index · Creator · Wallet", "Dry/live tick path"],
     depends: "Postgres + Meteora reads",
   },
   {
@@ -297,30 +297,31 @@ export const ROADMAP_PHASES = [
     status: "next" as const,
     outcome: "$AI creator fees buy ANSEM to 70%, then buybacks.",
     detail:
-      "Fees are $0 until live. Then: claim → buy ANSEM → gate → buybacks. Every tick in the ledger.",
+      "Fees are $0 until live. Then: claim → buy ANSEM → gate → buybacks. Still under manual / holdings control.",
     ships: ["Live keeper", "Creator sends + sigs", "70% gate flip"],
     depends: "ANSEM_DEST_WALLET + fee ledger",
   },
   {
-    id: "launchpad",
+    id: "ml",
     phase: 3,
-    title: "Launchpad",
+    title: "ML watch",
     status: "planned" as const,
-    outcome: "Mint into TOKEN–ANSEM; new coins join the index.",
-    detail: "ANSEM-quoted launches. No keys on the public hub.",
-    ships: ["Wallet connect", "Mint + pool", "Auto index join"],
-    depends: "Stable index book",
+    outcome: "Load an ML algorithm (see-microtrader) to monitor the DEX.",
+    detail:
+      "Watch for new entries with fees. Surface candidates into the same process — index, fee path, ledger — so the loop continues without losing manual override.",
+    ships: ["DEX fee-entry monitor", "Candidate → index pipeline", "Ops review before size"],
+    depends: "Stable manual flywheel + fee history",
   },
   {
-    id: "network",
+    id: "continue",
     phase: 4,
-    title: "Network",
+    title: "Continue",
     status: "planned" as const,
-    outcome: "Nodes, optional longs, adaptive sizing.",
+    outcome: "Launchpad, nodes, process keeps compounding.",
     detail:
-      "People run nodes at will (pubkeys only). Long SOL / ANSEM and brain after the flywheel is real.",
-    ships: ["Node registry", "Optional longs", "Brain from fee data"],
-    depends: "Flywheel live + history",
+      "Mint into TOKEN–ANSEM. Nodes optional. Manual + ML feed the same flywheel — the process continues.",
+    ships: ["Launchpad", "Node registry", "Adaptive sizing from ledger"],
+    depends: "ML watch live + flywheel proven",
   },
 ] as const;
 

@@ -30,6 +30,13 @@ export function OperatorBotReport() {
           wallet are the instruction set. You control it manually by what you
           hold, seed, and claim — the tick mirrors that book.
         </p>
+        <p className="mt-3 rounded border border-zinc-800 bg-zinc-950/60 px-3 py-2 text-[11px] leading-relaxed text-zinc-400">
+          <span className="text-emerald-300">Proportional:</span> if you sell
+          90% of a position, the creator / bot book sells 90% of that same
+          position. Your Δ% is the instruction — not absolute dollars. Later:
+          ML (see-microtrader) watches the DEX for new fee entries; same
+          process continues with manual override.
+        </p>
       </div>
 
       <div>
@@ -70,7 +77,7 @@ export function OperatorBotReport() {
             Public roadmap
           </h3>
           <p className="mt-1 text-[11px] text-zinc-400">
-            Index → Flywheel → Launchpad → Network
+            Manual → Flywheel → ML watch → Continue
           </p>
           <a
             href="/roadmap"

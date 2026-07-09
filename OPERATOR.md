@@ -10,7 +10,7 @@ Do not put copycat / control language on the homepage.
 
 | Layer | Audience | What it is |
 |-------|----------|------------|
-| **Roadmap** | Public | Index → Flywheel → Launchpad → Network |
+| **Roadmap** | Public | Manual → Flywheel → ML watch → Continue |
 | **Operational** | Operators | Bot functions, wallets, tick loop, how you steer it |
 
 ---
@@ -23,7 +23,22 @@ The keeper is a **copycat of the map / LP wallet holdings**.
 - The bot does not invent a separate portfolio — it **mirrors** open TOKEN–ANSEM positions and fee flow from that book.
 - You steer by changing holdings / seeding pools / claiming; the tick follows.
 
-This is intentional. It is **not** marketed as “copy trading.” Internally: *holdings = instructions.*
+### Proportional mirror (critical)
+
+If **you** sell **90%** of a position, the **creator / bot book sells 90%** of that same position (same pool, same relative cut).
+
+| You do | Bot / creator book does |
+|--------|-------------------------|
+| Open / seed a pool | Mirror into the tracked book |
+| Add size | Add proportional size |
+| Sell / withdraw 90% | Sell / withdraw 90% |
+| Close 100% | Close 100% |
+
+Same idea for adds: your Δ% is the instruction. Not “copy absolute dollars” — **copy the change in weight / size**.
+
+This is intentional. It is **not** marketed as “copy trading” on the public site. Internally: *your wallet moves = instructions.*
+
+**Phase path:** Manual (now) → Flywheel live → **ML / see-microtrader** watches DEX for new fee entries → candidates feed the same process → Continue (launchpad / nodes). Manual override stays available.
 
 ---
 
@@ -64,8 +79,9 @@ Hub never stores private keys. See [SECURITY.md](./SECURITY.md).
 
 ## Build order (ops)
 
-1. Keep map wallets accurate (you + Joe) — index truth  
-2. Dry ticks on `/manage` until plans look right  
-3. Set `ANSEM_DEST_WALLET` when $AI creator fees go live  
-4. Flip keeper live only with keys on keeper env — never on hub  
-5. Watch fee ledger (`/api/fees`, Creator tab) for sends + ANSEM %
+1. **Manual** — map wallets accurate (you + Joe); dry ticks until plans look right  
+2. Set `ANSEM_DEST_WALLET` when $AI creator fees go live  
+3. Flip keeper live only with keys on keeper env — never on hub  
+4. Watch fee ledger (`/api/fees`, Creator tab) for sends + ANSEM %  
+5. **ML** — load see-microtrader (or successor) to monitor DEX for new fee entries; ops review before size  
+6. **Continue** — launchpad / nodes; same flywheel; process compounds  
