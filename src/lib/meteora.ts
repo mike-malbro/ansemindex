@@ -125,3 +125,15 @@ export function claimedFeesUsd(p: OpenPosition): number {
   if (!f) return 0;
   return (f.amount_x_usd ?? 0) + (f.amount_y_usd ?? 0);
 }
+
+/** True if this DAMM v2 position is a TOKEN–ANSEM pair (Index universe). */
+export function isAnsemIndexPool(
+  p: OpenPosition,
+  ansemMint: string,
+): boolean {
+  const mint = ansemMint.toLowerCase();
+  return (
+    p.token_x?.address?.toLowerCase() === mint ||
+    p.token_y?.address?.toLowerCase() === mint
+  );
+}

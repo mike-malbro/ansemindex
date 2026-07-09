@@ -79,11 +79,11 @@ export function WalletLookup() {
     return (
       <PortfolioPoolBook
         title="Wallet"
-        subtitle={`DAMM v2 TOKEN–ANSEM pools on this pubkey. ${compoundPct}% compounds into LP, ${claimPct}% claimable in ANSEM quote. Pubkeys only.`}
+        subtitle={`This pubkey’s open LPs on the Index list (TOKEN–ANSEM DAMM v2 only). Not holdings. ${compoundPct}% compound / ${claimPct}% claim. Pubkeys only.`}
         refreshLabel="Refresh"
         onRefresh={() => void lookup(input || wallet)}
         refreshing={loading}
-        amountLabel="Amount"
+        amountLabel="Index LP"
         amountUsd={portfolio.totals.balances}
         poolCount={portfolio.total_pools}
         fees={{
@@ -95,8 +95,8 @@ export function WalletLookup() {
           claim_pct: claimPct,
         }}
         positions={portfolio.positions}
-        caption="$AI creator fees buy ANSEM toward the 70% gate. Fees are $0 until live."
-        emptyMessage="No open TOKEN–ANSEM pools on this wallet."
+        caption="Only Index pools — how this pubkey LPs the ANSEM Index. No SPL holdings."
+        emptyMessage="0 Index pools — this pubkey has no open TOKEN–ANSEM LPs on the Index list."
         lead={
           <div className="flex flex-wrap items-center gap-3">
             <a
@@ -148,8 +148,8 @@ export function WalletLookup() {
             Wallet
           </h1>
           <p className="mt-1 max-w-xl font-mono text-[11px] text-zinc-500">
-            Paste a pubkey — same board as Index: amount, fees, weights, pools.
-            Pubkeys only.
+            Paste a pubkey → its open LPs on the Index pool list (TOKEN–ANSEM
+            DAMM v2). Not token holdings. Pubkeys only.
           </p>
         </div>
       </div>
@@ -193,7 +193,7 @@ export function WalletLookup() {
 
       {!loading && !error && (
         <p className="py-10 text-center font-mono text-xs text-zinc-600">
-          Paste a pubkey to open the same pool book as Index.
+          Paste a pubkey to see Index LP interaction (0 pools if none).
         </p>
       )}
     </div>

@@ -159,7 +159,7 @@ export function CreatorFeePanel() {
           )}
           <p className="mt-1 max-w-xl font-mono text-[10px] text-zinc-600">
             {sourceNote ||
-              "$AI creator fees buy ANSEM toward the gate. Fees are $0 until live."}
+              "Tracks Index LP positions only — not token holdings. Fees $0 until live."}
           </p>
         </div>
         <span
@@ -218,11 +218,11 @@ export function CreatorFeePanel() {
     <>
       <PortfolioPoolBook
         title="Creator fees"
-        subtitle={`$AI creator fees buy ANSEM toward the ${targetPct}% gate. Same pool book as Index — sort by 5m / 1h / 6h / 24h. Fees are $0 until live.`}
+        subtitle={`This wallet’s open LPs on the Index list (TOKEN–ANSEM DAMM v2 only). Not token holdings. Sort 5m / 1h / 6h / 24h. $AI fees → ANSEM gate · $0 until live.`}
         refreshLabel="Refresh"
         onRefresh={() => void load()}
         refreshing={loading}
-        amountLabel="Amount"
+        amountLabel="Index LP"
         amountUsd={amountUsd}
         poolCount={poolCount}
         fees={{
@@ -234,11 +234,11 @@ export function CreatorFeePanel() {
           claim_pct: feeTotals.claim_pct ?? 10,
         }}
         positions={positions}
-        caption="$AI creator fees buy ANSEM toward the 70% gate. Fees are $0 until live."
+        caption="Only Index pools — how this pubkey LPs the ANSEM Index. No SPL holdings."
         emptyMessage={
           feeWallet
-            ? "0 pools on the creator fee wallet — no open TOKEN–ANSEM LPs yet."
-            : "0 pools — set ANSEM_DEST_WALLET to track the creator fee wallet."
+            ? "0 Index pools — this fee wallet has no open TOKEN–ANSEM LPs on the Index list."
+            : "0 Index pools — set ANSEM_DEST_WALLET to track the creator fee wallet."
         }
         lead={gateLead}
       />

@@ -26,6 +26,7 @@ import {
 import {
   claimedFeesUsd,
   getOpenPositions,
+  isAnsemIndexPool,
   positionValueUsd,
   unclaimedFeesUsd,
 } from "./meteora";
@@ -79,7 +80,11 @@ export async function ingestControllerWallet(
 
   try {
     const open = await getOpenPositions(wallet);
-    const enriched = await enrichPositions(open.positions, ANSEM_MINT);
+    // Index = TOKEN–ANSEM DAMM v2 only — ignore other Meteora positions.
+    const indexPositions = open.positions.filter((p) =>
+      isAnsemIndexPool(p, ANSEM_MINT),
+    );
+    const enriched = await enrichPositions(indexPositions, ANSEM_MINT);
     const seenPools = new Set<string>();
     let upserted = 0;
 
@@ -175,8 +180,10 @@ export async function ingestControllerWallet(
     );
 
     const feeSum = sumFeeBreakdowns(
-      open.positions.map((p) => feeBreakdownForPosition(p)),
+      indexPositions.map((p) => feeBreakdownForPosition(p)),
     );
+    const balances = enriched.reduce((s, p) => s + p.position_value_usd, 0);
+    const solPrice = open.sol_price || 0;
 
     return {
       poolsUpserted: upserted,
@@ -186,10 +193,24 @@ export async function ingestControllerWallet(
         wallet,
         ansem_mint: ANSEM_MINT,
         fetched_at: new Date().toISOString(),
-        total_positions: open.total_positions ?? enriched.length,
-        total_pools: open.total_pools ?? seenPools.size,
-        sol_price: open.sol_price,
-        totals: open.total,
+        total_positions: enriched.length,
+        total_pools: seenPools.size,
+        sol_price: solPrice,
+        totals: {
+          balances,
+          unclaimed_fees: feeSum.unclaimed_usd,
+          unclaimed_rewards: 0,
+          total_deposits: balances,
+          pnl: 0,
+          pnl_pct_change: 0,
+          balances_sol: solPrice > 0 ? balances / solPrice : 0,
+          unclaimed_fees_sol:
+            solPrice > 0 ? feeSum.unclaimed_usd / solPrice : 0,
+          unclaimed_rewards_sol: 0,
+          total_deposits_sol: solPrice > 0 ? balances / solPrice : 0,
+          pnl_sol: 0,
+          pnl_sol_pct_change: 0,
+        },
         fee_totals: {
           unclaimed_usd: feeSum.unclaimed_usd,
           claimed_usd: feeSum.claimed_usd,
