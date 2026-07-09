@@ -16,8 +16,8 @@ export default function BookPage() {
           <span className="text-emerald-400">{INDEX_TICKER}</span>{" "}
           <span className="text-zinc-300">{INDEX_NAME}</span>
           {" · "}
-          Index = pools · Creator fees = $0 until live (buy ANSEM) · Wallet =
-          paste pubkey. No keys.{" "}
+          Switch Index · Creator fees · Wallet below — same book layout. No
+          keys.{" "}
           <a href="/faq" className="text-emerald-400 hover:underline">
             FAQ
           </a>

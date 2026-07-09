@@ -1,42 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { usePathname } from "next/navigation";
 import { INDEX_NAME, INDEX_TICKER } from "@/lib/config";
 
+/** Site chrome — docs & products. Index/Creator/Wallet live in the book switcher. */
 const LINKS = [
-  { href: "/book", label: "Index", tab: "index" as const },
-  { href: "/book?tab=creator", label: "Creator fees", tab: "creator" as const },
-  { href: "/book?tab=wallet", label: "Wallet", tab: "wallet" as const },
+  { href: "/book", label: "Index" },
   { href: "/whitepaper", label: "Whitepaper" },
   { href: "/faq", label: "FAQ" },
   { href: "/launchpad", label: "Launchpad" },
   { href: "/roadmap", label: "Roadmap" },
 ] as const;
 
-function navActive(
-  pathname: string,
-  tab: string | null,
-  link: (typeof LINKS)[number],
-): boolean {
-  if (link.href.startsWith("/book")) {
-    if (pathname !== "/book") return false;
-    const want = "tab" in link ? link.tab : "index";
-    const current = tab === "creator" || tab === "creators"
-      ? "creator"
-      : tab === "wallet"
-        ? "wallet"
-        : "index";
-    return current === want;
-  }
-  return pathname === link.href || pathname.startsWith(`${link.href}/`);
-}
-
-function SiteNavInner() {
+export function SiteNav(_props?: { current?: string }) {
   const pathname = usePathname() || "/";
-  const search = useSearchParams();
-  const tab = search.get("tab");
 
   return (
     <header className="border-b border-zinc-800 bg-zinc-950/95 px-4 py-3 backdrop-blur sm:px-6">
@@ -54,7 +32,10 @@ function SiteNavInner() {
         </Link>
         <nav className="flex flex-wrap gap-1" aria-label="Main">
           {LINKS.map((l) => {
-            const active = navActive(pathname, tab, l);
+            const active =
+              l.href === "/book"
+                ? pathname === "/book"
+                : pathname === l.href || pathname.startsWith(`${l.href}/`);
             return (
               <Link
                 key={l.href}
@@ -72,22 +53,5 @@ function SiteNavInner() {
         </nav>
       </div>
     </header>
-  );
-}
-
-/** Single top menu — Index · Creator fees · Wallet · Whitepaper · FAQ · … */
-export function SiteNav(_props?: { current?: string }) {
-  return (
-    <Suspense
-      fallback={
-        <header className="border-b border-zinc-800 bg-zinc-950/95 px-4 py-3 sm:px-6">
-          <div className="mx-auto max-w-[1400px] font-mono text-sm text-zinc-500">
-            {INDEX_TICKER} {INDEX_NAME}
-          </div>
-        </header>
-      }
-    >
-      <SiteNavInner />
-    </Suspense>
   );
 }

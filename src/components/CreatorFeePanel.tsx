@@ -173,8 +173,8 @@ export function CreatorFeePanel() {
           </h1>
           <p className="mt-1 max-w-xl font-mono text-[11px] text-zinc-500">
             $AI (ANSEM Index) creator fees buy ANSEM toward the {targetPct}%
-            goal. Fees are <span className="text-zinc-300">$0</span> until
-            live. Under {targetPct}%: send / seed. At {targetPct}%+: buybacks.
+            gate. Fees are $0 until live. Under {targetPct}%: send / seed. At{" "}
+            {targetPct}%+: buybacks.
           </p>
         </div>
         <button

@@ -111,11 +111,11 @@ export function PoolIndexBook({ embedded = false }: { embedded?: boolean }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="font-mono text-lg font-semibold text-zinc-100">
-            Pool index
+            Index
           </h1>
           <p className="mt-1 max-w-xl font-mono text-[11px] text-zinc-500">
-            DAMM v2 TOKEN–ANSEM pools. Share % = proportional weight for ANSEM
-            $AI creator fees buy ANSEM ($0 until live). Map wallets auto-ingest.
+            DAMM v2 TOKEN–ANSEM pools. Share % weights the book. $AI creator
+            fees buy ANSEM ($0 until live). Map wallets auto-ingest.
           </p>
         </div>
         <button

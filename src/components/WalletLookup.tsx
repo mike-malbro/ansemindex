@@ -130,14 +130,24 @@ export function WalletLookup() {
 
   return (
     <div className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 px-4 py-4 sm:px-6">
-      <div>
-        <h1 className="font-mono text-lg font-semibold text-zinc-100">
-          Wallet
-        </h1>
-        <p className="mt-1 max-w-xl font-mono text-[11px] text-zinc-500">
-          Paste any wallet. See its portfolio against the index — token
-          holdings + open TOKEN–ANSEM LPs. Pubkeys only.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="font-mono text-lg font-semibold text-zinc-100">
+            Wallet
+          </h1>
+          <p className="mt-1 max-w-xl font-mono text-[11px] text-zinc-500">
+            Paste a pubkey. See portfolio vs the index — holdings + open
+            TOKEN–ANSEM LPs. Pubkeys only — never keys.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => void lookup(input || wallet || "")}
+          disabled={loading || !(input || wallet)}
+          className="rounded border border-zinc-700 bg-zinc-900 px-3 py-1.5 font-mono text-xs text-zinc-200 hover:border-zinc-500 disabled:opacity-50"
+        >
+          {loading ? "Looking up…" : "Refresh"}
+        </button>
       </div>
 
       <form
