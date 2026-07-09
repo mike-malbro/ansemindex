@@ -153,6 +153,32 @@ export function WalletLookup() {
               {fmtMoney(selectedRow.position_usd)}
             </span>
           )}
+          <form
+            className="ml-auto flex min-w-0 w-full max-w-md flex-1 gap-2 sm:w-auto"
+            onSubmit={(e) => {
+              e.preventDefault();
+              pasteLookup(input);
+            }}
+          >
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Paste another pubkey…"
+              spellCheck={false}
+              autoComplete="off"
+              className="min-w-0 flex-1 rounded border border-zinc-800 bg-zinc-900 px-3 py-1.5 font-mono text-xs text-zinc-100 placeholder:text-zinc-600 focus:border-zinc-600 focus:outline-none"
+            />
+            <button
+              type="submit"
+              className="rounded border border-zinc-700 bg-zinc-900 px-3 py-1.5 font-mono text-xs text-zinc-200 hover:border-zinc-500"
+            >
+              Look up
+            </button>
+          </form>
+          {pasteError && (
+            <p className="w-full font-mono text-xs text-rose-400">{pasteError}</p>
+          )}
         </div>
         <PoolIndexBook
           embedded
@@ -167,7 +193,7 @@ export function WalletLookup() {
     );
   }
 
-  // ——— List: top wallets by % ———
+  // ——— List: paste + top wallets by % ———
   return (
     <div className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 px-4 py-4 sm:px-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -176,7 +202,8 @@ export function WalletLookup() {
             Wallet
           </h1>
           <p className="mt-1 max-w-xl font-mono text-[11px] text-zinc-500">
-            Top wallets by Index %. Click one for the pool breakdown.
+            Paste a pubkey, or click a top wallet — both open the pool
+            breakdown.
           </p>
         </div>
         <button
@@ -188,6 +215,33 @@ export function WalletLookup() {
         </button>
       </div>
 
+      <form
+        className="flex flex-col gap-2 sm:flex-row sm:items-stretch"
+        onSubmit={(e) => {
+          e.preventDefault();
+          pasteLookup(input);
+        }}
+      >
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Paste Solana pubkey…"
+          spellCheck={false}
+          autoComplete="off"
+          className="min-w-0 flex-1 rounded border border-zinc-700 bg-zinc-900 px-3 py-2.5 font-mono text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-zinc-500 focus:outline-none"
+        />
+        <button
+          type="submit"
+          className="rounded border border-zinc-700 bg-zinc-900 px-4 py-2.5 font-mono text-sm text-zinc-200 hover:border-zinc-500"
+        >
+          Look up
+        </button>
+      </form>
+      {pasteError && (
+        <p className="font-mono text-xs text-rose-400">{pasteError}</p>
+      )}
+
       {error && (
         <div className="rounded border border-rose-900/60 bg-rose-950/40 px-4 py-3 font-mono text-sm text-rose-300">
           {error}
@@ -195,13 +249,22 @@ export function WalletLookup() {
       )}
 
       {loading && wallets.length === 0 && (
-        <p className="py-16 text-center font-mono text-sm text-zinc-500">
+        <p className="py-12 text-center font-mono text-sm text-zinc-500">
           Loading top wallets…
         </p>
       )}
 
       {!loading && (
         <>
+          <div className="flex items-baseline justify-between gap-2">
+            <h2 className="font-mono text-sm font-semibold text-zinc-200">
+              Top wallets
+            </h2>
+            <span className="font-mono text-[10px] text-zinc-600">
+              by Index % · click to drill down
+            </span>
+          </div>
+
           <section className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             <Stat label="Top wallets" value={String(wallets.length)} />
             <Stat label="Index amount" value={fmtMoney(totalUsd)} />
@@ -241,7 +304,8 @@ export function WalletLookup() {
                       colSpan={5}
                       className="px-3 py-10 text-center font-mono text-xs text-zinc-500"
                     >
-                      No wallets yet — refresh Index to ingest map wallets.
+                      No wallets yet — refresh Index to ingest map wallets. You
+                      can still paste a pubkey above.
                     </td>
                   </tr>
                 ) : (
@@ -279,38 +343,9 @@ export function WalletLookup() {
           </div>
 
           <p className="font-mono text-[10px] text-zinc-600">
-            % = wallet LP ÷ Index LP. Click a row → pool breakdown.
+            % = wallet LP ÷ Index LP. Click a row or paste above → pool
+            breakdown.
           </p>
-
-          <form
-            className="flex flex-col gap-2 border-t border-zinc-800 pt-4 sm:flex-row sm:items-center"
-            onSubmit={(e) => {
-              e.preventDefault();
-              pasteLookup(input);
-            }}
-          >
-            <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-600">
-              Or paste
-            </span>
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Pubkey…"
-              spellCheck={false}
-              autoComplete="off"
-              className="min-w-0 flex-1 rounded border border-zinc-800 bg-zinc-900 px-3 py-2 font-mono text-xs text-zinc-100 placeholder:text-zinc-600 focus:border-zinc-600 focus:outline-none"
-            />
-            <button
-              type="submit"
-              className="rounded border border-zinc-700 bg-zinc-900 px-3 py-2 font-mono text-xs text-zinc-200 hover:border-zinc-500"
-            >
-              Open
-            </button>
-          </form>
-          {pasteError && (
-            <p className="font-mono text-xs text-rose-400">{pasteError}</p>
-          )}
         </>
       )}
     </div>
