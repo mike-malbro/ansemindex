@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fmtMoney, fmtPct, shortCa, solscanAccount } from "@/lib/format";
 import { looksLikeSecret, isLikelyPubkey } from "@/lib/security";
+import { PieChart, consolidateSlices, type PieSlice } from "./PieChart";
 import { PoolIndexBook } from "./PoolIndexBook";
 import type { IndexPayload, TopWalletRow } from "@/lib/types";
 
@@ -35,9 +36,8 @@ function rankFromIndex(data: IndexPayload, limit = 10): TopWalletRow[] {
 }
 
 /**
- * Wallet page:
- * 1) Top wallets by Index %
- * 2) Click one → pool breakdown (Your % on each Index pool)
+ * Wallet page: small top-10 + pie → click drills into that wallet’s Index book.
+ * Paste still works as a secondary lookup.
  */
 export function WalletLookup() {
   const [wallets, setWallets] = useState<TopWalletRow[]>([]);
@@ -52,7 +52,6 @@ export function WalletLookup() {
     setLoading(true);
     setError(null);
     try {
-      // Prefer dedicated top-wallets API; fall back to Index map wallets.
       const [wRes, iRes] = await Promise.all([
         fetch("/api/wallets?limit=10", { cache: "no-store" }),
         fetch("/api/index", { cache: "no-store" }),
@@ -96,13 +95,22 @@ export function WalletLookup() {
     [wallets, selected],
   );
 
+  const pieSlices = useMemo(() => {
+    const slices: PieSlice[] = wallets.map((w) => ({
+      id: w.address,
+      label: w.label || shortCa(w.address, 4, 4),
+      value: w.position_usd,
+    }));
+    return consolidateSlices(slices, { maxSlices: 10, minPct: 0.5 });
+  }, [wallets]);
+
   function openWallet(address: string) {
     setPasteError(null);
     setSelected(address);
     setWalletParam(address);
   }
 
-  function backToList() {
+  function clearSelection() {
     setSelected(null);
     setWalletParam(null);
   }
@@ -124,257 +132,179 @@ export function WalletLookup() {
     openWallet(trimmed);
   }
 
-  // ——— Drill-down: pool breakdown for selected wallet ———
-  if (selected) {
-    return (
-      <div className="flex flex-1 flex-col">
-        <div className="mx-auto flex w-full max-w-[1400px] flex-wrap items-center gap-3 px-4 pt-4 sm:px-6">
-          <button
-            type="button"
-            onClick={backToList}
-            className="rounded border border-zinc-700 bg-zinc-900 px-3 py-1.5 font-mono text-xs text-zinc-200 hover:border-zinc-500"
-          >
-            ← Top wallets
-          </button>
-          <span className="font-mono text-sm text-zinc-100">
-            {selectedRow?.label ?? "Wallet"}
-          </span>
-          <a
-            href={solscanAccount(selected)}
-            target="_blank"
-            rel="noreferrer"
-            className="font-mono text-xs text-sky-400 hover:underline"
-          >
-            {shortCa(selected, 6, 6)}
-          </a>
-          {selectedRow && (
-            <span className="font-mono text-[11px] text-emerald-300/90">
-              {fmtPct(selectedRow.index_pct)} of Index ·{" "}
-              {fmtMoney(selectedRow.position_usd)}
-            </span>
-          )}
-          <form
-            className="ml-auto flex min-w-0 w-full max-w-md flex-1 gap-2 sm:w-auto"
-            onSubmit={(e) => {
-              e.preventDefault();
-              pasteLookup(input);
-            }}
-          >
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Paste another pubkey…"
-              spellCheck={false}
-              autoComplete="off"
-              className="min-w-0 flex-1 rounded border border-zinc-800 bg-zinc-900 px-3 py-1.5 font-mono text-xs text-zinc-100 placeholder:text-zinc-600 focus:border-zinc-600 focus:outline-none"
-            />
-            <button
-              type="submit"
-              className="rounded border border-zinc-700 bg-zinc-900 px-3 py-1.5 font-mono text-xs text-zinc-200 hover:border-zinc-500"
-            >
-              Look up
-            </button>
-          </form>
-          {pasteError && (
-            <p className="w-full font-mono text-xs text-rose-400">{pasteError}</p>
-          )}
-        </div>
-        <PoolIndexBook
-          embedded
-          mode="wallet"
-          wallet={selected}
-          title="Breakdown"
-          subtitle="Pool-by-pool: Your % = this wallet’s LP ÷ pool TVL on each Index TOKEN–ANSEM pool."
-          refreshLabel="Refresh"
-          caption="Breakdown of the selected wallet across the Index pool book."
-        />
-      </div>
-    );
-  }
-
-  // ——— List: paste + top wallets by % ———
   return (
     <div className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 px-4 py-4 sm:px-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="font-mono text-lg font-semibold text-zinc-100">
-            Wallet
-          </h1>
-          <p className="mt-1 max-w-xl font-mono text-[11px] text-zinc-500">
-            Paste a pubkey, or click a top wallet — both open the pool
-            breakdown.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => void load()}
-          className="rounded border border-zinc-700 bg-zinc-900 px-3 py-1.5 font-mono text-xs text-zinc-200 hover:border-zinc-500"
-        >
-          Refresh
-        </button>
-      </div>
-
-      <form
-        className="flex flex-col gap-2 sm:flex-row sm:items-stretch"
-        onSubmit={(e) => {
-          e.preventDefault();
-          pasteLookup(input);
-        }}
-      >
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Paste Solana pubkey…"
-          spellCheck={false}
-          autoComplete="off"
-          className="min-w-0 flex-1 rounded border border-zinc-700 bg-zinc-900 px-3 py-2.5 font-mono text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-zinc-500 focus:outline-none"
-        />
-        <button
-          type="submit"
-          className="rounded border border-zinc-700 bg-zinc-900 px-4 py-2.5 font-mono text-sm text-zinc-200 hover:border-zinc-500"
-        >
-          Look up
-        </button>
-      </form>
-      {pasteError && (
-        <p className="font-mono text-xs text-rose-400">{pasteError}</p>
-      )}
-
-      {error && (
-        <div className="rounded border border-rose-900/60 bg-rose-950/40 px-4 py-3 font-mono text-sm text-rose-300">
-          {error}
-        </div>
-      )}
-
-      {loading && wallets.length === 0 && (
-        <p className="py-12 text-center font-mono text-sm text-zinc-500">
-          Loading top wallets…
-        </p>
-      )}
-
-      {!loading && (
-        <>
-          <div className="flex items-baseline justify-between gap-2">
-            <h2 className="font-mono text-sm font-semibold text-zinc-200">
-              Top wallets
-            </h2>
+      {/* ——— Compact top: pie + top 10 ——— */}
+      <section className="rounded border border-zinc-800 bg-zinc-900/40 px-4 py-4">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <div>
+            <h1 className="font-mono text-sm font-semibold text-zinc-100">
+              Top 10 wallets
+            </h1>
+            <p className="mt-0.5 font-mono text-[10px] text-zinc-500">
+              Share of Index LP · click a slice or row to drill down
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
             <span className="font-mono text-[10px] text-zinc-600">
-              by Index % · click to drill down
+              {fmtMoney(totalUsd)} Index
             </span>
+            <button
+              type="button"
+              onClick={() => void load()}
+              className="rounded border border-zinc-700 bg-zinc-900 px-2.5 py-1 font-mono text-[10px] text-zinc-300 hover:border-zinc-500"
+            >
+              Refresh
+            </button>
           </div>
+        </div>
 
-          <section className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            <Stat label="Top wallets" value={String(wallets.length)} />
-            <Stat label="Index amount" value={fmtMoney(totalUsd)} />
-            <Stat
-              label="#1 share"
-              value={wallets[0] ? fmtPct(wallets[0].index_pct) : "—"}
-              valueClass="text-emerald-300"
-              sub={wallets[0]?.label}
-            />
-          </section>
-
-          <div className="overflow-x-auto rounded border border-zinc-800">
-            <table className="w-full min-w-[560px] border-collapse text-left">
-              <thead className="bg-zinc-900/80">
-                <tr className="border-b border-zinc-800">
-                  <th className="px-3 py-2 font-mono text-[10px] uppercase text-zinc-500">
-                    #
-                  </th>
-                  <th className="px-3 py-2 font-mono text-[10px] uppercase text-zinc-500">
-                    Wallet
-                  </th>
-                  <th className="px-3 py-2 text-right font-mono text-[10px] uppercase text-zinc-500">
-                    %
-                  </th>
-                  <th className="px-3 py-2 text-right font-mono text-[10px] uppercase text-zinc-500">
-                    Amount
-                  </th>
-                  <th className="px-3 py-2 text-right font-mono text-[10px] uppercase text-zinc-500">
-                    Pools
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {wallets.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="px-3 py-10 text-center font-mono text-xs text-zinc-500"
-                    >
-                      No wallets yet — refresh Index to ingest map wallets. You
-                      can still paste a pubkey above.
-                    </td>
-                  </tr>
-                ) : (
-                  wallets.map((w) => (
-                    <tr
-                      key={w.address}
-                      onClick={() => openWallet(w.address)}
-                      className="cursor-pointer border-b border-zinc-800/80 transition hover:bg-zinc-900/70"
-                    >
-                      <td className="px-3 py-3 font-mono text-xs text-zinc-600">
-                        {w.rank}
-                      </td>
-                      <td className="px-3 py-3">
-                        <div className="font-mono text-sm text-zinc-100">
-                          {w.label}
-                        </div>
-                        <div className="font-mono text-[10px] text-zinc-600">
-                          {shortCa(w.address, 6, 6)}
-                        </div>
-                      </td>
-                      <td className="px-3 py-3 text-right font-mono text-base tabular-nums text-emerald-300">
-                        {fmtPct(w.index_pct)}
-                      </td>
-                      <td className="px-3 py-3 text-right font-mono text-sm tabular-nums text-zinc-100">
-                        {fmtMoney(w.position_usd)}
-                      </td>
-                      <td className="px-3 py-3 text-right font-mono text-sm tabular-nums text-zinc-500">
-                        {w.pools}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <p className="font-mono text-[10px] text-zinc-600">
-            % = wallet LP ÷ Index LP. Click a row or paste above → pool
-            breakdown.
+        {error && (
+          <p className="mt-3 font-mono text-xs text-rose-400">{error}</p>
+        )}
+        {loading && wallets.length === 0 && (
+          <p className="mt-6 py-8 text-center font-mono text-xs text-zinc-500">
+            Loading top wallets…
           </p>
-        </>
-      )}
-    </div>
-  );
-}
+        )}
 
-function Stat({
-  label,
-  value,
-  sub,
-  valueClass,
-}: {
-  label: string;
-  value: string;
-  sub?: string;
-  valueClass?: string;
-}) {
-  return (
-    <div className="rounded border border-zinc-800 bg-zinc-900/60 px-3 py-3">
-      <div className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">
-        {label}
-      </div>
-      <div
-        className={`mt-1 font-mono text-lg font-semibold tabular-nums ${valueClass ?? "text-zinc-100"}`}
-      >
-        {value}
-      </div>
-      {sub && (
-        <div className="mt-0.5 font-mono text-[10px] text-zinc-500">{sub}</div>
+        {!loading && (
+          <div className="mt-4 grid gap-6 lg:grid-cols-2">
+            <PieChart
+              title="Index share"
+              slices={pieSlices}
+              size={180}
+              selectedId={selected}
+              onSelect={(s) => {
+                if (!s || s.id === "__other") {
+                  clearSelection();
+                  return;
+                }
+                openWallet(s.id);
+              }}
+            />
+
+            <div className="min-w-0">
+              <ul className="max-h-[280px] space-y-0.5 overflow-y-auto">
+                {wallets.length === 0 ? (
+                  <li className="py-8 text-center font-mono text-xs text-zinc-500">
+                    No wallets yet — paste a pubkey below, or refresh Index.
+                  </li>
+                ) : (
+                  wallets.map((w) => {
+                    const active =
+                      selected?.toLowerCase() === w.address.toLowerCase();
+                    return (
+                      <li key={w.address}>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            active ? clearSelection() : openWallet(w.address)
+                          }
+                          className={`flex w-full items-center gap-3 rounded px-2 py-2 text-left font-mono transition ${
+                            active
+                              ? "bg-zinc-800 text-zinc-100"
+                              : "text-zinc-400 hover:bg-zinc-900/80 hover:text-zinc-200"
+                          }`}
+                        >
+                          <span className="w-5 shrink-0 text-[10px] text-zinc-600">
+                            {w.rank}
+                          </span>
+                          <span className="min-w-0 flex-1 truncate text-xs">
+                            {w.label}
+                            <span className="ml-1.5 text-[10px] text-zinc-600">
+                              {shortCa(w.address, 4, 4)}
+                            </span>
+                          </span>
+                          <span className="shrink-0 tabular-nums text-xs text-emerald-300">
+                            {fmtPct(w.index_pct)}
+                          </span>
+                          <span className="hidden w-20 shrink-0 text-right tabular-nums text-[11px] text-zinc-500 sm:block">
+                            {fmtMoney(w.position_usd)}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })
+                )}
+              </ul>
+
+              <form
+                className="mt-3 flex gap-2 border-t border-zinc-800 pt-3"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  pasteLookup(input);
+                }}
+              >
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Or paste pubkey…"
+                  spellCheck={false}
+                  autoComplete="off"
+                  className="min-w-0 flex-1 rounded border border-zinc-800 bg-zinc-950 px-2.5 py-1.5 font-mono text-[11px] text-zinc-100 placeholder:text-zinc-600 focus:border-zinc-600 focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  className="rounded border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 font-mono text-[11px] text-zinc-300 hover:border-zinc-500"
+                >
+                  Look up
+                </button>
+              </form>
+              {pasteError && (
+                <p className="mt-1.5 font-mono text-[10px] text-rose-400">
+                  {pasteError}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* ——— Drill-down: selected wallet’s Index book ——— */}
+      {selected ? (
+        <section className="flex flex-1 flex-col">
+          <div className="mb-2 flex flex-wrap items-center gap-3">
+            <span className="font-mono text-sm text-zinc-100">
+              {selectedRow?.label ?? "Wallet"}
+            </span>
+            <a
+              href={solscanAccount(selected)}
+              target="_blank"
+              rel="noreferrer"
+              className="font-mono text-xs text-sky-400 hover:underline"
+            >
+              {shortCa(selected, 6, 6)}
+            </a>
+            {selectedRow && (
+              <span className="font-mono text-[11px] text-emerald-300/90">
+                {fmtPct(selectedRow.index_pct)} of Index ·{" "}
+                {fmtMoney(selectedRow.position_usd)}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={clearSelection}
+              className="ml-auto font-mono text-[11px] text-zinc-500 hover:text-zinc-300"
+            >
+              Clear
+            </button>
+          </div>
+          <PoolIndexBook
+            embedded
+            mode="wallet"
+            wallet={selected}
+            title="Breakdown"
+            subtitle="Pool-by-pool: Your % = this wallet’s LP ÷ pool TVL on each Index TOKEN–ANSEM pool."
+            refreshLabel="Refresh"
+            caption="Selected wallet across the Index pool book."
+          />
+        </section>
+      ) : (
+        <p className="py-10 text-center font-mono text-xs text-zinc-600">
+          Select a wallet above to open its pool breakdown.
+        </p>
       )}
     </div>
   );
