@@ -57,7 +57,7 @@ export function HomeIndex() {
   }, [data]);
 
   return (
-    <section id="index" className="mt-12 w-full">
+    <section id="index" className="mt-8 w-full">
       {error && <p className="text-xs text-rose-400">{error}</p>}
       {!data && !error && (
         <p className="text-xs text-zinc-500">Loading pools…</p>
