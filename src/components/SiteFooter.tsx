@@ -5,6 +5,8 @@ const CYCLE = [
   { href: "/book", label: "Index" },
   { href: "/book?tab=creator", label: "Creator fees" },
   { href: "/book?tab=wallet", label: "Wallet" },
+  { href: "/join", label: "Join" },
+  { href: "/nodes", label: "Nodes" },
   { href: "/whitepaper", label: "Whitepaper" },
   { href: "/faq", label: "FAQ" },
   { href: "/roadmap", label: "Roadmap" },
@@ -12,10 +14,15 @@ const CYCLE = [
 ] as const;
 
 /** Bottom cycle nav — secondary pages live here, not in the top bar. */
-export function SiteFooter() {
+export function SiteFooter(props?: { tone?: "default" | "black" }) {
+  const black = props?.tone === "black";
   return (
-    <footer className="mt-auto border-t border-zinc-800 bg-zinc-950 px-4 py-8 sm:px-6">
-      <div className="mx-auto max-w-[1400px]">
+    <footer
+      className={`mt-auto border-t px-4 py-8 sm:px-6 lg:px-10 ${
+        black ? "border-white/10 bg-black" : "border-zinc-800 bg-zinc-950"
+      }`}
+    >
+      <div className={black ? "w-full" : "mx-auto max-w-[1400px]"}>
         <div className="flex flex-wrap items-baseline gap-2">
           <span className="font-mono text-xs font-semibold text-emerald-400">
             {INDEX_TICKER}

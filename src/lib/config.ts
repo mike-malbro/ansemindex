@@ -66,3 +66,35 @@ export const INDEX_TOKEN_MINT =
   process.env.NEXT_PUBLIC_INDEX_TOKEN_MINT ??
   process.env.INDEX_TOKEN_MINT ??
   "";
+
+/**
+ * The index’s own market: $ANSEMLP–ANSEM DAMM v2 pool.
+ * Set when the pair is live — then DexScreener, join, and public API point here.
+ */
+export const INDEX_POOL_ADDRESS =
+  process.env.NEXT_PUBLIC_INDEX_POOL_ADDRESS ??
+  process.env.INDEX_POOL_ADDRESS ??
+  "";
+
+/** True once mint + pool are configured (token live). */
+export const INDEX_POOL_LIVE = Boolean(
+  INDEX_TOKEN_MINT && INDEX_POOL_ADDRESS,
+);
+
+export const INDEX_POOL_PAIR = `${INDEX_TOKEN_SYMBOL}–ANSEM`;
+
+export const INDEX_POOL_METEORA_URL = INDEX_POOL_ADDRESS
+  ? `https://app.meteora.ag/pools/${INDEX_POOL_ADDRESS}`
+  : "";
+
+/**
+ * DexScreener for $ANSEMLP — prefer the ANSEMLP–ANSEM pool when live.
+ * Override with NEXT_PUBLIC_DEXSCREENER_URL.
+ */
+export const DEXSCREENER_INDEX_URL =
+  process.env.NEXT_PUBLIC_DEXSCREENER_URL ??
+  (INDEX_POOL_ADDRESS
+    ? `https://dexscreener.com/solana/${INDEX_POOL_ADDRESS}`
+    : INDEX_TOKEN_MINT
+      ? `https://dexscreener.com/solana/${INDEX_TOKEN_MINT}`
+      : "https://dexscreener.com/solana/9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump");

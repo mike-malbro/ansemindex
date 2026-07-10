@@ -28,10 +28,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "No project" }, { status: 503 });
     }
 
-    const limitRaw = Number(req.nextUrl.searchParams.get("limit") ?? 10);
+    const limitRaw = Number(req.nextUrl.searchParams.get("limit") ?? 50);
     const limit = Number.isFinite(limitRaw)
-      ? Math.min(Math.max(Math.floor(limitRaw), 1), 25)
-      : 10;
+      ? Math.min(Math.max(Math.floor(limitRaw), 1), 100)
+      : 50;
 
     type Agg = {
       address: string;

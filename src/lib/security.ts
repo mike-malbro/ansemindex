@@ -4,7 +4,7 @@
  */
 
 const SECRET_KEY_RE =
-  /^(private_key|secret|seed|mnemonic|secret_key|treasury_secret|operator_key|keypair|sk)$/i;
+  /^(private_key|secret|seed|mnemonic|secret_key|treasury_secret|operator_key|keypair|sk|lp_private_key|operator_private_key|privatekey|privkey)$/i;
 
 const SECRET_VALUE_HINT =
   /\b(private[_\s-]?key|seed\s*phrase|mnemonic|BEGIN\s+PRIVATE)\b/i;

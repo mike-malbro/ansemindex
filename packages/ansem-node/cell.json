@@ -1,0 +1,56 @@
+{
+  "cellId": "my-ansem-node",
+  "label": "ANSEM LP INDEX node",
+  "role": "node",
+  "influence": {
+    "leaderLabel": "Mike",
+    "leaderLp": "HpJbzERP44V21mKGRDDUArb9JJaL9NdPSgXzZ9uyieVB",
+    "note": "Mike's node is influence — optional reference sizing. Your deposits are independent."
+  },
+  "hub": {
+    "publicApi": "https://hub-production-7867.up.railway.app/api/public",
+    "indexApi": "https://hub-production-7867.up.railway.app/api/index",
+    "docs": "https://hub-production-7867.up.railway.app/join"
+  },
+  "ansemMint": "9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump",
+  "indexTicker": "$ANSEMLP",
+  "indexPool": {
+    "pair": "ANSEMLP–ANSEM",
+    "tokenMint": "",
+    "poolAddress": "",
+    "note": "Key market for $ANSEMLP. Set mint + pool when live; pull via hub /api/public → index_pool."
+  },
+  "wallets": {
+    "main": "",
+    "lp": "",
+    "operator": "",
+    "ansemDest": ""
+  },
+  "feeSplit": {
+    "ansemSend": 0.7,
+    "reserve": 0.3,
+    "reinvest": 0
+  },
+  "routes": [
+    {
+      "id": "ansem_send",
+      "pct": 0.7,
+      "type": "jupiter_buy_send",
+      "mint": "9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump",
+      "note": "Buy ANSEM with claimed fees, send to dest (NOT burn)"
+    },
+    {
+      "id": "reserve",
+      "pct": 0.3,
+      "type": "sol_reserve",
+      "note": "Keep SOL on operator for gas / future pool adds"
+    }
+  ],
+  "notes": [
+    "1. Buy $ANSEMLP when live — creator fees fund buybacks + pool growth.",
+    "2. Deposit independently into any Index TOKEN–ANSEM pool on Meteora.",
+    "3. Pull the list: pnpm index  (GET /api/public).",
+    "4. Run local: pnpm doctor && pnpm dry. Railway: deploy this folder.",
+    "5. Keys only in cell_secrets.env / Railway secrets — never on the hub."
+  ]
+}

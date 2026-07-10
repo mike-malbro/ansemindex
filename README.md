@@ -4,14 +4,17 @@ Independent Meteora DAMM v2 LP terminal + Life-style fee keeper for the ANSEM in
 
 **Fee flow (launch):** claim LP fees → sweep to operator → Jupiter buy ANSEM → **send to creator fee wallet** (not burn).
 
-**Docs:** [DATA.md](./DATA.md) (production databasing) · [OPERATOR.md](./OPERATOR.md) (ops / bot functions — not public product copy) · [SECURITY.md](./SECURITY.md) · whitepaper `/whitepaper#data`
+**Join:** buy `$ANSEMLP` (when live) → deposit independently → pull `/api/public` → run a node ([packages/ansem-node](./packages/ansem-node)). Mike’s cell is **influence**.
 
-## Two services (Railway)
+**Docs:** [DATA.md](./DATA.md) · [OPERATOR.md](./OPERATOR.md) · [SECURITY.md](./SECURITY.md) · whitepaper `/whitepaper#data` · join `/join` · nodes `/nodes`
+
+## Two services (Railway) + publishable node
 
 | Service | Path | Role | Keys |
 |---------|------|------|------|
-| **Hub** | repo root (Next.js) | Portfolio terminal + `/manage` | Pubkeys only |
-| **Keeper** | `keeper/` | Claim / buy / send loop | `LP_PRIVATE_KEY`, `OPERATOR_PRIVATE_KEY` |
+| **Hub** | repo root (Next.js) | Portfolio terminal + `/manage` + public API | Pubkeys only |
+| **Keeper** | `keeper/` | Mike influence fee tick | `LP_PRIVATE_KEY`, `OPERATOR_PRIVATE_KEY` |
+| **Node template** | `packages/ansem-node` | What others publish/fork | Their secrets only |
 
 ## Creator fee wallets
 
@@ -67,5 +70,20 @@ pnpm start        # loop, still DRY_RUN until flipped
 
 ## API
 
-- Hub: `GET /api/health`, `GET /api/portfolio`, `GET /api/pool/[address]`, `GET|POST /api/keeper`
-- Keeper: `GET /health`, `GET /api/state`, `POST /api/tick`
+**Public (CORS `*`, no auth — for third parties):**
+
+```bash
+curl https://hub-production-7867.up.railway.app/api/public
+curl https://hub-production-7867.up.railway.app/api/public?format=csv
+```
+
+- `GET /api/public` — pool list JSON (`name`, `ticker`, `pools[]` with share, mcap, amounts, Meteora/Dex links)
+- `GET /api/public?format=csv` — same list as CSV
+- `GET /api/public?limit=50` — cap rows
+
+**Hub (internal / full):**
+
+- `GET /api/index` — full index payload (also CORS-open for GET)
+- `GET /api/health`, `GET /api/portfolio`, `GET /api/pool/[address]`, `GET|POST /api/keeper`
+
+**Keeper:** `GET /health`, `GET /api/state`, `POST /api/tick`

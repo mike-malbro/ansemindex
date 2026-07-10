@@ -22,6 +22,7 @@ The keeper is a **copycat of the map / LP wallet holdings**.
 - What you hold, seed, and claim in the tracked wallet(s) is the **manual control surface**.
 - The bot does not invent a separate portfolio — it **mirrors** open TOKEN–ANSEM positions and fee flow from that book.
 - You steer by changing holdings / seeding pools / claiming; the tick follows.
+- **Mike’s cell (`ansem-index`) is influence** — reference for the public index. Published nodes (`packages/ansem-node`) use *their own* LP wallets.
 
 This is intentional. It is **not** marketed as “copy trading” on the public site. Internally: *your wallet moves = instructions.*
 

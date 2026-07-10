@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
-import { INDEX_NAME, INDEX_TICKER } from "@/lib/config";
+import { INDEX_NAME, INDEX_TICKER, INDEX_POOL_PAIR } from "@/lib/config";
 import { ANSEM_TARGET_PCT } from "@/lib/thesis";
 
 export const metadata = {
   title: `FAQ · ${INDEX_TICKER}`,
-  description: `FAQ for ${INDEX_NAME} — ticker ${INDEX_TICKER}, creator fees, wallet lookup.`,
+  description: `FAQ for ${INDEX_NAME} — ticker ${INDEX_TICKER}, ${INDEX_POOL_PAIR} pool, creator fees.`,
 };
 
 const FAQS = [
@@ -16,11 +16,15 @@ const FAQS = [
   },
   {
     q: `What is ${INDEX_TICKER}?`,
-    a: `${INDEX_TICKER} is the product ticker. The word/name is ${INDEX_NAME}. Pool pairs still quote ANSEM (the mint) — that is separate from the ${INDEX_TICKER} ticker.`,
+    a: `${INDEX_TICKER} is the index token. Its home market is ${INDEX_POOL_PAIR} — buy and LP there when live. Other Index pools still quote ANSEM as the pair asset.`,
+  },
+  {
+    q: `What is the ${INDEX_POOL_PAIR} pool?`,
+    a: `The key market for the product: ${INDEX_TICKER} paired with ANSEM on Meteora DAMM v2. When live it sits in the Index list like any other TOKEN–ANSEM pool, and DexScreener / join point at it.`,
   },
   {
     q: "Where do creator fees come from?",
-    a: `${INDEX_NAME} (${INDEX_TICKER}) creator fees — when live — buy ANSEM toward the ${Math.round(ANSEM_TARGET_PCT * 100)}% gate, then buybacks. Today those fees are $0 until the fee path is live. This is not “ANSEM token creator fees buy the index.”`,
+    a: `${INDEX_TICKER} creator fees — when live — buy ANSEM toward the ${Math.round(ANSEM_TARGET_PCT * 100)}% gate, then buybacks. Today those fees are $0 until the fee path is live. This is not “ANSEM token creator fees buy the index.”`,
   },
   {
     q: "What is the Wallet tab?",

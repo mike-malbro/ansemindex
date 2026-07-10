@@ -53,7 +53,7 @@ export function WalletLookup() {
     setError(null);
     try {
       const [wRes, iRes] = await Promise.all([
-        fetch("/api/wallets?limit=10", { cache: "no-store" }),
+        fetch("/api/wallets?limit=50", { cache: "no-store" }),
         fetch("/api/index", { cache: "no-store" }),
       ]);
 
@@ -139,7 +139,7 @@ export function WalletLookup() {
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <div>
             <h1 className="font-mono text-sm font-semibold text-zinc-100">
-              Top 10 wallets
+              Top wallets
             </h1>
             <p className="mt-0.5 font-mono text-[10px] text-zinc-500">
               Share of Index LP · click a slice or row to drill down

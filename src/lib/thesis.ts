@@ -12,7 +12,7 @@ export const BASE_FEE_PCT = 1;
 export const NODE_MIN_USD = 1;
 
 export const MISSION =
-  "ANSEM LP INDEX (ticker $ANSEMLP) is the list of Meteora DAMM v2 TOKEN–ANSEM pools. $ANSEMLP creator fees — when live — buy ANSEM toward the 70% gate, then buybacks. Today those fees are $0. Anyone can run a node at their own will. This public hub never holds keys.";
+  "ANSEM LP INDEX (ticker $ANSEMLP) is the list of Meteora DAMM v2 TOKEN–ANSEM pools. The key market is $ANSEMLP–ANSEM. $ANSEMLP creator fees — when live — buy ANSEM toward the 70% gate, then buybacks. Today those fees are $0. Anyone can run a node at their own will. This public hub never holds keys.";
 
 export const PRINCIPLES = [
   "Public hub never holds private keys — Postgres stores pubkeys and pool data only.",
@@ -76,11 +76,12 @@ export const EXPLAIN_PRO_RATA = {
 
 export const EXPLAIN_NODES = {
   title: "ANSEM nodes (optional)",
-  body: "Anyone can run an ANSEM node and invest at their own will — seed pools, claim fees, follow the flywheel. The hub never holds your keys. Copy the method, not someone else’s wallet.",
+  body: "Anyone can run an ANSEM node and invest at their own will — seed pools, claim fees, follow the flywheel. Mike’s node is influence (reference sizing). Your deposits and keys are independent. The hub never holds your keys.",
   bullets: [
     "Optional — not required to view the index",
-    "Keys stay on your machine or private keeper",
-    "Pubkeys + reports only on the public hub",
+    "Pull the list via GET /api/public — then deposit on Meteora yourself",
+    "Keys stay on your machine or private node (Railway) — never on the hub",
+    "Publishable package: packages/ansem-node → its own GitHub repo",
   ],
 } as const;
 
@@ -144,8 +145,12 @@ export const COLLAB_RULES = [
     body: "mike-malbro/ansemindex — migrations, DATA.md, SECURITY.md, UI. Collaborators welcome. No signing keys in env committed to git.",
   },
   {
-    title: "Private keeper",
-    body: "Signing material lives only in keeper secrets (Railway/Fly). Keeper POSTs tick summaries to the hub persist API — prefer that over broad DB credentials on the keeper.",
+    title: "Publishable node repo",
+    body: "packages/ansem-node (or mike-malbro/ansem-node) — template others fork. Pull /api/public, deposit independently, run local or Railway. Mike’s cell is influence only.",
+  },
+  {
+    title: "Private keeper / node secrets",
+    body: "Signing material lives only in node/keeper secrets (Railway/Fly). Prefer POSTing tick summaries to the hub over broad DB credentials on the node.",
   },
   {
     title: "PRs & migrations",

@@ -303,6 +303,7 @@ export async function ingestAllMapWallets(): Promise<{
 
   const project = await getPrimaryProject();
   if (!project) throw new Error("No project row — run migrations");
+  const projectId = project.id;
 
   // Seed env wallets into DB (labels / order).
   for (let i = 0; i < TRACKED_WALLETS.length; i++) {
@@ -314,7 +315,7 @@ export async function ingestAllMapWallets(): Promise<{
          active = true,
          label = EXCLUDED.label,
          sort_order = EXCLUDED.sort_order`,
-      [project.id, address, mapWalletLabel(i, address), i],
+      [projectId, address, mapWalletLabel(i, address), i],
     );
   }
 
@@ -343,47 +344,75 @@ export async function ingestAllMapWallets(): Promise<{
   }
 
   // Pass 1 — known map wallets (env + previously discovered)
-  await ingestList(await listActiveMapWallets(project.id));
+  await ingestList(await listActiveMapWallets(projectId));
 
-  // Auto-discover every LP owner in Index pools (no manual add)
+  // Auto-discover LP owners — highest-value pools first, soft deadline so
+  // refresh returns before Railway/proxy kills the request. Wallets are
+  // registered incrementally so a timeout still keeps what we found.
+  const rankedPools = await query<{ pool_address: string }>(
+    `WITH latest AS (
+       SELECT DISTINCT ON (ps.pool_id)
+         p.pool_address,
+         ps.position_value_usd
+       FROM pool_snapshots ps
+       INNER JOIN pools p ON p.id = ps.pool_id
+       WHERE p.project_id = $1 AND p.status = 'open'
+       ORDER BY ps.pool_id, ps.snapshot_at DESC
+     )
+     SELECT pool_address
+     FROM latest
+     ORDER BY position_value_usd DESC NULLS LAST`,
+    [projectId],
+  );
   const poolAddrs =
-    seenUnion.size > 0
-      ? [...seenUnion]
-      : (
-          await query<{ pool_address: string }>(
-            `SELECT pool_address FROM pools
-             WHERE project_id = $1 AND status = 'open'`,
-            [project.id],
-          )
-        ).map((p) => p.pool_address);
+    rankedPools.length > 0
+      ? rankedPools.map((p) => p.pool_address)
+      : seenUnion.size > 0
+        ? [...seenUnion]
+        : (
+            await query<{ pool_address: string }>(
+              `SELECT pool_address FROM pools
+               WHERE project_id = $1 AND status = 'open'`,
+              [projectId],
+            )
+          ).map((p) => p.pool_address);
 
   let discovered = 0;
   if (poolAddrs.length > 0) {
     try {
-      const owners = await discoverLpWalletsForPools(poolAddrs);
       const known = new Set(wallets.map((a) => a.toLowerCase()));
       const fresh: string[] = [];
-      for (const owner of owners) {
-        if (known.has(owner.toLowerCase())) continue;
-        known.add(owner.toLowerCase());
-        fresh.push(owner);
+
+      async function registerOwners(owners: string[]) {
+        for (const owner of owners) {
+          const key = owner.toLowerCase();
+          if (known.has(key)) continue;
+          known.add(key);
+          fresh.push(owner);
+          const sortOrder = await nextMapWalletSortOrder(projectId);
+          await query(
+            `INSERT INTO controller_wallets (project_id, address, label, sort_order)
+             VALUES ($1, $2, $3, $4)
+             ON CONFLICT (project_id, address) DO UPDATE SET
+               active = true`,
+            [projectId, owner, `map(${sortOrder})`, sortOrder],
+          );
+        }
       }
 
-      for (const address of fresh) {
-        const sortOrder = await nextMapWalletSortOrder(project.id);
-        const label = `map(${sortOrder})`;
-        await query(
-          `INSERT INTO controller_wallets (project_id, address, label, sort_order)
-           VALUES ($1, $2, $3, $4)
-           ON CONFLICT (project_id, address) DO UPDATE SET
-             active = true`,
-          [project.id, address, label, sortOrder],
-        );
-      }
+      await discoverLpWalletsForPools(poolAddrs, {
+        // Small rolling batches — public RPC only clears ~15 pools/pass.
+        // Cursor advances each refresh so the full book gets covered.
+        maxPools: 20,
+        concurrency: 3,
+        deadlineMs: 150_000,
+        rolling: true,
+        onOwners: registerOwners,
+      });
 
       discovered = fresh.length;
       if (fresh.length > 0) {
-        const toIngest = (await listActiveMapWallets(project.id)).filter((w) =>
+        const toIngest = (await listActiveMapWallets(projectId)).filter((w) =>
           fresh.some((a) => a.toLowerCase() === w.address.toLowerCase()),
         );
         await ingestList(toIngest);

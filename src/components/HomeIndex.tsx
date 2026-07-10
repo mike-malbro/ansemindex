@@ -3,11 +3,18 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { IndexPayload } from "@/lib/types";
-import { fmtMoney, shortCa, solscanAccount } from "@/lib/format";
+import {
+  fmtMoney,
+  shortCa,
+  solscanAccount,
+  meteoraPoolUrl,
+  dexTokenUrl,
+} from "@/lib/format";
 import { REFRESH_INTERVAL_MS } from "@/lib/config";
+import { downloadIndexExcel, downloadIndexPdf } from "@/lib/export-index";
 import { PieChart, consolidateSlices } from "./PieChart";
 
-/** Homepage: live pool index + share pie (auto multi-wallet). */
+/** Homepage: scientific pool list — full width, black, exportable. */
 export function HomeIndex() {
   const [data, setData] = useState<IndexPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -50,138 +57,165 @@ export function HomeIndex() {
   }, [data]);
 
   return (
-    <section id="index" className="mt-10">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <div>
-          <h2 className="text-lg font-semibold">The index</h2>
-          <p className="mt-1 text-xs text-zinc-500">
-            DAMM v2 TOKEN–ANSEM pools. $ANSEMLP creator fees buy ANSEM ($0 until live).
-          </p>
-        </div>
-        <Link href="/book" className="text-[11px] text-sky-400 hover:underline">
-          Full index →
-        </Link>
-      </div>
-
-      {error && <p className="mt-3 text-xs text-rose-400">{error}</p>}
+    <section id="index" className="mt-12 w-full">
+      {error && <p className="text-xs text-rose-400">{error}</p>}
       {!data && !error && (
-        <p className="mt-6 text-xs text-zinc-500">Loading pools…</p>
+        <p className="text-xs text-zinc-500">Loading pools…</p>
       )}
 
       {data && (
         <>
-          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="flex flex-wrap items-end gap-x-8 gap-y-3 border-b border-white/10 pb-4">
             <Stat label="Pools" value={String(data.total_pools)} />
+            <Stat label="Index" value={fmtMoney(data.total_position_usd)} />
             <Stat
-              label="Index amount"
-              value={fmtMoney(data.total_position_usd)}
-            />
-            <Stat
-              label="All-time fees"
+              label="Fees"
               value={fmtMoney(data.total_fees_generated_usd)}
-              valueClass="text-emerald-300"
-              sub={`${fmtMoney(data.total_claimed_fees_usd)} claimed · ${fmtMoney(data.total_compounded_fees_usd)} compounded`}
+              valueClass="text-emerald-400"
             />
-            <Stat
-              label="Treasury"
-              value={fmtMoney(data.treasury_usd)}
-              sub="$ANSEMLP fees → ANSEM · $0 until live"
-            />
+            <div className="ml-auto flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => downloadIndexExcel(data)}
+                className="border border-white/15 px-3 py-1.5 text-[11px] text-zinc-300 transition hover:border-white/40 hover:text-white"
+              >
+                Excel
+              </button>
+              <button
+                type="button"
+                onClick={() => downloadIndexPdf(data)}
+                className="border border-white/15 px-3 py-1.5 text-[11px] text-zinc-300 transition hover:border-white/40 hover:text-white"
+              >
+                PDF
+              </button>
+              <a
+                href="/api/public?format=csv"
+                className="border border-white/15 px-3 py-1.5 text-[11px] text-zinc-300 transition hover:border-white/40 hover:text-white"
+              >
+                API CSV
+              </a>
+            </div>
           </div>
 
-          <div className="mt-4 rounded border border-zinc-800 bg-zinc-900/30 p-4">
-            <PieChart
-              title="Index weights"
-              slices={composition}
-              size={160}
-              onSelect={(s) => {
-                if (s && s.id !== "__other") {
-                  window.location.href = `/book?pool=${encodeURIComponent(s.id)}`;
-                }
-              }}
-            />
+          <div className="mt-8 grid gap-10 lg:grid-cols-[220px_1fr] lg:items-start">
+            <div>
+              <PieChart
+                title="Weights"
+                slices={composition}
+                size={160}
+                onSelect={(s) => {
+                  if (s && s.id !== "__other") {
+                    window.location.href = `/book?pool=${encodeURIComponent(s.id)}`;
+                  }
+                }}
+              />
+            </div>
+
+            <div className="min-w-0 overflow-x-auto">
+              <table className="w-full min-w-[720px] border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-white/10">
+                    <th className="pb-2 pr-4 text-[10px] font-normal uppercase tracking-wider text-zinc-500">
+                      Pool
+                    </th>
+                    <th className="pb-2 px-3 text-right text-[10px] font-normal uppercase tracking-wider text-zinc-500">
+                      Share
+                    </th>
+                    <th className="pb-2 px-3 text-right text-[10px] font-normal uppercase tracking-wider text-zinc-500">
+                      Mcap
+                    </th>
+                    <th className="pb-2 px-3 text-right text-[10px] font-normal uppercase tracking-wider text-zinc-500">
+                      Amount
+                    </th>
+                    <th className="pb-2 px-3 text-right text-[10px] font-normal uppercase tracking-wider text-zinc-500">
+                      Fees
+                    </th>
+                    <th className="pb-2 pl-3 text-[10px] font-normal uppercase tracking-wider text-zinc-500">
+                      Invest
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.pools.map((p) => (
+                    <tr
+                      key={p.pool_address}
+                      className="border-b border-white/5 hover:bg-white/[0.03]"
+                    >
+                      <td className="py-3 pr-4">
+                        <Link
+                          href={`/book?pool=${encodeURIComponent(p.pool_address)}`}
+                          className="text-sm text-white hover:underline"
+                        >
+                          {p.token_symbol}
+                          <span className="text-zinc-500">–ANSEM</span>
+                        </Link>
+                        <div className="text-[10px] text-zinc-600">
+                          {shortCa(p.pool_address)}
+                        </div>
+                      </td>
+                      <td className="px-3 py-3 text-right text-sm tabular-nums text-emerald-400/90">
+                        {(p.share_pct ?? 0).toFixed(1)}%
+                      </td>
+                      <td className="px-3 py-3 text-right text-sm tabular-nums text-zinc-300">
+                        {fmtMoney(p.market_cap_usd)}
+                      </td>
+                      <td className="px-3 py-3 text-right text-sm tabular-nums text-white">
+                        {fmtMoney(p.position_value_usd)}
+                      </td>
+                      <td className="px-3 py-3 text-right text-sm tabular-nums text-emerald-400/80">
+                        {fmtMoney(p.fees_generated_usd)}
+                      </td>
+                      <td className="py-3 pl-3">
+                        <div className="flex gap-2 text-[10px]">
+                          <a
+                            href={meteoraPoolUrl(p.pool_address)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-zinc-500 hover:text-white"
+                          >
+                            Meteora
+                          </a>
+                          <a
+                            href={dexTokenUrl(p.token_mint)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-zinc-500 hover:text-white"
+                          >
+                            Dex
+                          </a>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="mt-8 border-t border-white/10 pt-4 text-[11px] text-zinc-500">
+            <p>
+              Public API (CORS open):{" "}
+              <code className="text-zinc-400">GET /api/public</code>
+              {" · "}
+              <code className="text-zinc-400">GET /api/public?format=csv</code>
+            </p>
             <p className="mt-2 text-[10px] text-zinc-600">
-              Click a slice → pool drill-down on Index.
+              Mapped from{" "}
+              {(data.map_wallets ?? []).map((m, i) => (
+                <span key={m.address}>
+                  {i > 0 ? " · " : ""}
+                  <a
+                    href={solscanAccount(m.address)}
+                    className="text-zinc-500 hover:text-white"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {m.label}
+                  </a>
+                </span>
+              ))}
             </p>
           </div>
-
-          <div className="mt-4 overflow-x-auto rounded border border-zinc-800">
-            <table className="w-full min-w-[560px] border-collapse text-left">
-              <thead className="bg-zinc-900/80">
-                <tr className="border-b border-zinc-800">
-                  <th className="px-3 py-2 text-[10px] uppercase text-zinc-500">
-                    Pool
-                  </th>
-                  <th className="px-3 py-2 text-right text-[10px] uppercase text-zinc-500">
-                    Share
-                  </th>
-                  <th className="px-3 py-2 text-right text-[10px] uppercase text-zinc-500">
-                    Mcap
-                  </th>
-                  <th className="px-3 py-2 text-right text-[10px] uppercase text-zinc-500">
-                    Amount
-                  </th>
-                  <th className="px-3 py-2 text-right text-[10px] uppercase text-zinc-500">
-                    Fees
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.pools.slice(0, 25).map((p) => (
-                  <tr
-                    key={p.pool_address}
-                    className="border-b border-zinc-800/80 hover:bg-zinc-900/70"
-                  >
-                    <td className="px-3 py-2.5">
-                      <Link
-                        href={`/book?pool=${encodeURIComponent(p.pool_address)}`}
-                        className="text-sm text-zinc-100 hover:underline"
-                      >
-                        {p.token_symbol}
-                        <span className="text-zinc-500">–ANSEM</span>
-                      </Link>
-                      <div className="text-[10px] text-zinc-600">
-                        {shortCa(p.pool_address)}
-                      </div>
-                    </td>
-                    <td className="px-3 py-2.5 text-right text-sm tabular-nums text-emerald-200/90">
-                      {(p.share_pct ?? 0).toFixed(1)}%
-                    </td>
-                    <td className="px-3 py-2.5 text-right text-sm tabular-nums text-zinc-200">
-                      {fmtMoney(p.market_cap_usd)}
-                    </td>
-                    <td className="px-3 py-2.5 text-right text-sm tabular-nums text-zinc-100">
-                      {fmtMoney(p.position_value_usd)}
-                    </td>
-                    <td className="px-3 py-2.5 text-right text-sm tabular-nums text-emerald-300/90">
-                      {fmtMoney(p.fees_generated_usd)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <p className="mt-2 text-[10px] text-zinc-600">
-            Auto-mapped from{" "}
-            {(data.map_wallets ?? []).map((m, i) => (
-              <span key={m.address}>
-                {i > 0 ? " + " : ""}
-                <a
-                  href={solscanAccount(m.address)}
-                  className="text-zinc-400 hover:text-sky-400"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {m.label}
-                </a>
-              </span>
-            ))}{" "}
-            ·{" "}
-            <Link href="/book" className="text-sky-400 hover:underline">
-              full book
-            </Link>
-          </p>
         </>
       )}
     </section>
@@ -191,25 +225,22 @@ export function HomeIndex() {
 function Stat({
   label,
   value,
-  sub,
   valueClass,
 }: {
   label: string;
   value: string;
-  sub?: string;
   valueClass?: string;
 }) {
   return (
-    <div className="rounded border border-zinc-800 bg-zinc-900/60 px-3 py-3">
+    <div>
       <div className="text-[10px] uppercase tracking-wider text-zinc-500">
         {label}
       </div>
       <div
-        className={`mt-1 text-lg font-semibold tabular-nums ${valueClass ?? "text-zinc-100"}`}
+        className={`mt-0.5 text-xl font-semibold tabular-nums ${valueClass ?? "text-white"}`}
       >
         {value}
       </div>
-      {sub && <div className="mt-0.5 text-[10px] text-zinc-500">{sub}</div>}
     </div>
   );
 }

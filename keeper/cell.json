@@ -1,12 +1,17 @@
 {
   "cellId": "ansem-index",
-  "label": "ANSEM LP INDEX flywheel",
+  "label": "Mike · influence leader",
+  "role": "influence",
   "ansemMint": "9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump",
   "wallets": {
     "main": "",
     "lp": "HpJbzERP44V21mKGRDDUArb9JJaL9NdPSgXzZ9uyieVB",
     "operator": "",
     "ansemDest": ""
+  },
+  "influence": {
+    "leaderLabel": "Mike",
+    "note": "This cell is influence for the public index. Others fork packages/ansem-node — they do not share these keys."
   },
   "feeSplit": {
     "ansemSend": 0.7,

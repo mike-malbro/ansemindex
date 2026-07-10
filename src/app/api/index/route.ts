@@ -10,6 +10,16 @@ import { assertNoSecrets, isLikelyPubkey } from "@/lib/security";
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Accept",
+};
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: CORS });
+}
+
 /** GET /api/index — merged pool index; refresh auto-discovers all pool LPs. */
 export async function GET(req: NextRequest) {
   try {
@@ -38,15 +48,18 @@ export async function GET(req: NextRequest) {
           error: "Index DB not ready",
           hint: "Set DATABASE_URL and redeploy",
         },
-        { status: 503 },
+        { status: 503, headers: CORS },
       );
     }
 
-    return NextResponse.json(index);
+    return NextResponse.json(index, { headers: CORS });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("[api/index]", message);
-    return NextResponse.json({ error: message }, { status: 502 });
+    return NextResponse.json(
+      { error: message },
+      { status: 502, headers: CORS },
+    );
   }
 }
 

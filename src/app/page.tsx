@@ -2,157 +2,153 @@ import Link from "next/link";
 import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
 import { HomeIndex } from "@/components/HomeIndex";
-import { FeeFlywheelChart } from "@/components/whitepaper/FeeFlywheelChart";
-import { INDEX_NAME, INDEX_TICKER } from "@/lib/config";
 import {
-  ANSEM_TARGET_PCT,
-  BASE_FEE_PCT,
-  HOW_TO_GUIDE,
-  PRINCIPLES,
-  ROADMAP_PHASES,
-} from "@/lib/thesis";
+  INDEX_NAME,
+  INDEX_TICKER,
+  INDEX_POOL_PAIR,
+  INDEX_POOL_LIVE,
+  INDEX_POOL_METEORA_URL,
+  DEXSCREENER_INDEX_URL,
+} from "@/lib/config";
 
 export const metadata = {
   title: `${INDEX_TICKER} · ${INDEX_NAME}`,
-  description: `${INDEX_NAME} (${INDEX_TICKER}) — TOKEN–ANSEM pools. $ANSEMLP creator fees buy ANSEM ($0 until live).`,
+  description: `${INDEX_NAME} — TOKEN–ANSEM pools. Key market: ${INDEX_POOL_PAIR}. ${INDEX_TICKER} fees fund buybacks and growth.`,
 };
 
 export default function GuideHome() {
-  const pct = Math.round(ANSEM_TARGET_PCT * 100);
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-950 font-mono text-zinc-100">
-      <SiteNav />
+    <div className="flex min-h-screen flex-col bg-black font-mono text-white">
+      <SiteNav tone="black" />
 
-      <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-        <p className="text-[10px] uppercase tracking-widest text-emerald-400/90">
-          {INDEX_TICKER} · public hub · no keys
+      <main className="w-full flex-1 px-4 py-10 sm:px-6 lg:px-10">
+        <p className="text-[10px] uppercase tracking-widest text-emerald-400">
+          {INDEX_TICKER}
         </p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
           {INDEX_NAME}
         </h1>
-        <p className="mt-3 max-w-xl text-sm leading-relaxed text-zinc-400">
-          The index is the list of Meteora DAMM v2 TOKEN–ANSEM pools.{" "}
-          {INDEX_TICKER} creator fees — when live — buy ANSEM toward the {pct}%
-          gate (today: <span className="text-zinc-200">$0</span>). Map wallets
-          auto-ingest. DAMM v2 at {BASE_FEE_PCT}%.
-        </p>
 
-        <div className="mt-6 flex flex-wrap gap-3">
+        <ul className="mt-5 max-w-2xl space-y-2 text-sm leading-relaxed text-zinc-400">
+          <li className="flex gap-2">
+            <span className="text-zinc-600">·</span>
+            <span>
+              A list of Meteora DAMM v2 TOKEN–ANSEM pools. That is the index.
+            </span>
+          </li>
+          <li className="flex gap-2">
+            <span className="text-zinc-600">·</span>
+            <span>
+              Key market:{" "}
+              <span className="text-zinc-200">{INDEX_POOL_PAIR}</span>
+              {INDEX_POOL_LIVE ? (
+                <>
+                  {" "}
+                  —{" "}
+                  <a
+                    href={INDEX_POOL_METEORA_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-zinc-300 underline decoration-white/20 underline-offset-2 hover:text-white"
+                  >
+                    trade / LP on Meteora
+                  </a>
+                </>
+              ) : (
+                <span className="text-zinc-600"> (coming)</span>
+              )}
+              . {INDEX_TICKER} fees fund buybacks and growth.
+            </span>
+          </li>
+          <li className="flex gap-2">
+            <span className="text-zinc-600">·</span>
+            <span>
+              Invest in any Index pool individually on{" "}
+              <a
+                href="https://app.meteora.ag"
+                target="_blank"
+                rel="noreferrer"
+                className="text-zinc-300 underline decoration-white/20 underline-offset-2 hover:text-white"
+              >
+                Meteora
+              </a>
+              . Mike’s node is influence — your deposits are independent.
+            </span>
+          </li>
+        </ul>
+
+        <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px]">
+          <a
+            href={DEXSCREENER_INDEX_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="text-zinc-400 underline decoration-white/20 underline-offset-2 hover:text-white"
+          >
+            DexScreener
+            {!INDEX_POOL_LIVE && (
+              <span className="ml-1 text-[10px] text-zinc-600">
+                (placeholder)
+              </span>
+            )}
+          </a>
+          <Link
+            href="/join"
+            className="text-zinc-400 underline decoration-white/20 underline-offset-2 hover:text-white"
+          >
+            Join
+          </Link>
+          <Link
+            href="/nodes"
+            className="text-zinc-400 underline decoration-white/20 underline-offset-2 hover:text-white"
+          >
+            Nodes
+          </Link>
           <Link
             href="/book"
-            className="inline-flex items-center rounded border border-emerald-800/50 bg-emerald-950/20 px-4 py-2.5 text-sm text-emerald-100/90 transition hover:border-emerald-700/60"
+            className="text-zinc-400 underline decoration-white/20 underline-offset-2 hover:text-white"
           >
-            Index →
-          </Link>
-          <Link
-            href="/book?tab=creator"
-            className="inline-flex items-center rounded border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm text-zinc-200 transition hover:border-zinc-500"
-          >
-            Creator fees →
-          </Link>
-          <Link
-            href="/faq"
-            className="inline-flex items-center rounded border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm text-zinc-200 transition hover:border-zinc-500"
-          >
-            FAQ →
+            Full index
           </Link>
         </div>
 
-        <HomeIndex />
-
-        <section id="fee-chart" className="mt-12">
-          <h2 className="text-sm font-semibold text-zinc-200">Fee chart</h2>
-          <p className="mt-1 text-[11px] text-zinc-500">
-            {INDEX_TICKER} creator fees → buy ANSEM → {pct}% gate → buybacks
-            ($0 until live).
+        <section
+          id="api"
+          className="mt-10 w-full border-t border-white/10 pt-8"
+        >
+          <h2 className="text-sm font-semibold text-white">API</h2>
+          <p className="mt-1 max-w-2xl text-xs text-zinc-500">
+            Public pool list. CORS open · no auth · no keys. Nodes and third
+            parties pull this.
           </p>
-          <div className="mt-4">
-            <FeeFlywheelChart />
-          </div>
-          <Link
-            href="/whitepaper#flywheel"
-            className="mt-3 inline-block text-[11px] text-emerald-400 hover:underline"
-          >
-            Full chart →
-          </Link>
-        </section>
+          <pre className="mt-4 overflow-x-auto border border-white/10 bg-black p-4 text-[11px] leading-relaxed text-zinc-400">
+            {`GET /api/public
+GET /api/public?format=csv
+GET /api/public?limit=50
 
-        <section className="mt-12">
-          <h2 className="text-lg font-semibold">How-to</h2>
-          <ol className="mt-6 space-y-3">
-            {HOW_TO_GUIDE.map((step) => (
-              <li
-                key={step.id}
-                className="flex gap-3 rounded border border-zinc-800 bg-zinc-900/40 px-4 py-4"
-              >
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-zinc-700 text-xs text-zinc-300">
-                  {step.n}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-sm font-semibold text-zinc-100">
-                    {step.title}
-                  </h3>
-                  <p className="mt-1 text-xs leading-relaxed text-zinc-400">
-                    {step.body}
-                  </p>
-                  <Link
-                    href={step.href}
-                    className="mt-2 inline-block text-[11px] text-emerald-400 hover:underline"
-                  >
-                    {step.cta} →
-                  </Link>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        <section className="mt-12">
-          <div className="flex items-baseline justify-between gap-2">
-            <h2 className="text-lg font-semibold">Roadmap</h2>
-            <Link
-              href="/roadmap"
-              className="text-[11px] text-emerald-400 hover:underline"
+curl https://hub-production-7867.up.railway.app/api/public
+curl https://hub-production-7867.up.railway.app/api/public?format=csv`}
+          </pre>
+          <p className="mt-3 text-[11px] text-zinc-600">
+            Returns{" "}
+            <code className="text-zinc-500">name</code>,{" "}
+            <code className="text-zinc-500">ticker</code>,{" "}
+            <code className="text-zinc-500">index_pool</code> ({INDEX_POOL_PAIR}
+            ), and{" "}
+            <code className="text-zinc-500">pools[]</code> (share, mcap, amounts,
+            Meteora / Dex links).{" "}
+            <a
+              href="/api/public"
+              className="text-zinc-400 underline decoration-white/20 hover:text-white"
             >
-              Full roadmap →
-            </Link>
-          </div>
-          <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
-            {ROADMAP_PHASES.map((p) => (
-              <div
-                key={p.id}
-                className={`min-w-[120px] flex-1 rounded border px-3 py-3 ${
-                  p.status === "now"
-                    ? "border-emerald-800/50 bg-emerald-950/20"
-                    : "border-zinc-800 bg-zinc-900/30"
-                }`}
-              >
-                <div className="text-[10px] uppercase tracking-wider text-zinc-500">
-                  Phase {p.phase} · {p.status}
-                </div>
-                <div className="mt-1 text-sm font-semibold text-zinc-100">
-                  {p.title}
-                </div>
-              </div>
-            ))}
-          </div>
+              Open JSON →
+            </a>
+          </p>
         </section>
 
-        <section className="mt-12 mb-16">
-          <h2 className="text-lg font-semibold">Principles</h2>
-          <ul className="mt-4 space-y-2">
-            {PRINCIPLES.map((p) => (
-              <li
-                key={p}
-                className="border-l-2 border-zinc-700 pl-3 text-[11px] leading-relaxed text-zinc-400"
-              >
-                {p}
-              </li>
-            ))}
-          </ul>
-        </section>
+        <HomeIndex />
       </main>
-      <SiteFooter />
+
+      <SiteFooter tone="black" />
     </div>
   );
 }
